@@ -73,7 +73,7 @@ function makeTrees(seed,span,hMin,hMax,gMin,gMax){const r=rng(seed),t=[];let x=-
 const farTrees=makeTrees(3,3400,200,380,30,90),midTrees=makeTrees(5,3600,240,400,70,190);
 
 /* ---------- 상태 ---------- */
-let state='title',p,objs,lantern,crusher,stal,gateO,deaths,cpi,camX=-180,deadT,endT,endCardT,panDone,fade=0,jumpBuf=0,time=0,shake=0,parts=[],plateNow={player:false,obj:false};
+let state='title',p,objs,lantern,crusher,stal,gateO,deaths,cpi,camX=-180,deadT,endT,endCardT,panDone,fade=0,jumpBuf=0,time=0,shake=0,parts=[],blood=[],stains=[],plateNow={player:false,obj:false};
 function initWorld(){
   objs=[
     {type:'body',x:338,y:286,w:28,h:14,vy:0,face:-1,old:true},  // 먼저 온 아이
@@ -82,7 +82,7 @@ function initWorld(){
   lantern={x:378,y:288,w:8,h:12,vy:0,held:false,hung:false};
   crusher={x:2147,w:50,h:80,y:32,st:'idle',t:0,v:0};
   stal={x:2942,w:14,h:34,y:90,st:'idle',t:0,v:0,grow:1};
-  gateO=0;deaths=0;cpi=0;deadT=0;endT=0;endCardT=0;panDone=false;parts=[];
+  gateO=0;deaths=0;cpi=0;deadT=0;endT=0;endCardT=0;panDone=false;parts=[];blood=[];stains=[];
   spawn();
 }
 function spawn(){
@@ -254,6 +254,16 @@ function worldTick(dt){
   else if(s.st==='grow'){s.grow+=dt;if(s.grow>=1){s.grow=1;s.st='idle';}}
   for(const q of parts){q.vy+=GRAV*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.l-=dt;}
   parts=parts.filter(q=>q.l>0);
+  // 피: 날아가다 땅이나 가시에 닿으면 그 자리에 얼룩으로 남는다
+  const bsol=statics.concat(spikes);
+  for(const q of blood){
+    q.vy+=GRAV*.8*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.l-=dt;
+    for(const r of bsol)if(q.x>r.x&&q.x<r.x+r.w&&q.y>r.y&&q.y<r.y+r.h){
+      stains.push({x:q.x,y:Math.max(r.y,q.y-1),r:q.r*.9,d:0,dm:Math.random()<.4?2+Math.random()*5:0});q.l=0;break;}
+  }
+  blood=blood.filter(q=>q.l>0);if(stains.length>500)stains.splice(0,stains.length-500);
+  for(const t of stains)if(t.d<t.dm)t.d+=dt*2.2;
+  for(const o of objs)if(o.bloody&&o.bt<1)o.bt=Math.min(1,o.bt+dt*.35);
   if(shake>0)shake=Math.max(0,shake-dt*2);
 }
 function placeLanternAtCp(){const c=checkpoints[cpi];lantern.x=c.x+40;lantern.y=c.y-12;lantern.vy=0;lantern.held=false;}
@@ -263,7 +273,15 @@ function die(cause){
   if(cause!=='fall'){
     const b={type:'body',x:p.x+p.w/2-14,y:p.y+p.h-14,w:28,h:14,vy:0,face:p.face};
     for(let k=0;k<2;k++)for(const s of statics)if(overlap(b,s)){if(b.x+b.w/2>s.x+s.w/2)b.x=s.x+s.w;else b.x=s.x-b.w;}
+    if(cause==='spike'){b.bloody=true;b.bt=0;b.seed=Math.random()*1000;}
     objs.push(b);
+  }
+  if(cause==='spike'){
+    const cx=p.x+p.w/2,cy=p.y+p.h-6;
+    for(let i=0;i<46;i++){const a=-Math.PI/2+(Math.random()-.5)*2.6,v=60+Math.random()*230;
+      blood.push({x:cx+(Math.random()-.5)*8,y:cy-Math.random()*10,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:.7+Math.random()*1.5,l:2.5});}
+    for(const s of spikes)for(let x=s.x+4;x<s.x+s.w;x+=8)if(Math.abs(x-cx)<24)
+      stains.push({x:x+(Math.random()-.5),y:s.y+1.5,r:1.4+Math.random()*1.2,d:0,dm:3+Math.random()*6});
   }
   if(lantern.held){
     lantern.held=false;
@@ -337,6 +355,8 @@ function drawBody(o){
   ctx.beginPath();ctx.ellipse(.5,-5.5,7,5.5,0,0,Math.PI*2);ctx.fill();
   ctx.lineWidth=3.2;seg(6,-3,13.5,-1.6);seg(6,-6,12.5,-7);
   ctx.lineWidth=2.2;seg(-2,-2,-6,0);
+  if(o.bloody){const r=rng(o.seed|0);ctx.lineWidth=1.3;
+    for(let i=0;i<4;i++){const x=-10+r()*20,L=(2+r()*7)*o.bt;seg(x,-1,x,L);ctx.beginPath();ctx.arc(x,L,1.1,0,Math.PI*2);ctx.fill();}}
   ctx.restore();
 }
 function drawLantern(x,y){
@@ -385,6 +405,13 @@ function render(){
   const st=stal;
   if(st.st!=='gone'){const hh=st.h*(st.st==='grow'?st.grow:1),ox=st.st==='warn'?(Math.random()-.5)*2:0;ctx.beginPath();ctx.moveTo(st.x+ox,st.y);ctx.lineTo(st.x+st.w+ox,st.y);ctx.lineTo(st.x+st.w/2+ox,st.y+hh);ctx.fill();}
   for(const q of parts)ctx.fillRect(q.x-1,q.y-1,2.4,2.4);
+  // 피 얼룩과 흐르는 방울
+  ctx.fillStyle=ctx.strokeStyle='#040404';ctx.lineCap='round';
+  for(const t of stains){if(t.x<lo||t.x>hi)continue;
+    ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();
+    if(t.d>0){ctx.lineWidth=Math.max(.8,t.r*.7);seg(t.x,t.y,t.x,t.y+t.d);ctx.beginPath();ctx.arc(t.x,t.y+t.d,t.r*.75,0,Math.PI*2);ctx.fill();}}
+  for(const q of blood){const sp=Math.hypot(q.vx,q.vy)||1,k=Math.min(5,sp*.018);
+    ctx.lineWidth=q.r*1.6;seg(q.x,q.y,q.x-q.vx/sp*k,q.y-q.vy/sp*k);}
   // 등불 걸이
   ctx.fillStyle='#060606';ctx.fillRect(3797,92,3,68);ctx.fillRect(3797,89.5,12,2.6);ctx.fillRect(3806.6,89.5,1.2,5);
   // 상자·아이들
