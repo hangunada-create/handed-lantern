@@ -53,7 +53,7 @@ const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 
 /* ---------- 세계: 1장 「넋건지기」 — 해 질 녘의 갯벌 (설계도: design/chapter1.md) ---------- */
-const WORLD_END=4100;
+const WORLD_END=4420;
 const statics=[
   {x:-260,y:-200,w:80,h:700},                 // 왼쪽 끝
   // 0~1. 깨어남과 갯길
@@ -79,9 +79,11 @@ const statics=[
   {x:2980,y:210,w:100,h:26,rock:true,cap:true},{x:3135,y:255,w:65,h:26,rock:true,cap:true},
   // 6. 밀물: 깊은 물골
   {x:3200,y:300,w:130,h:200},{x:3330,y:350,w:150,h:200},{x:3480,y:300,w:120,h:200},
-  // 7. 갓바위로 오르는 바위
-  {x:3600,y:255,w:60,h:150,rock:true},{x:3660,y:210,w:200,h:200,rock:true},
-  {x:4100,y:-200,w:80,h:700},                 // 오른쪽 끝
+  // 7. 마지막 시험: 밀물 드는 말뚝 펄. 높은 갯바위에는 물에 뜬 몸을 타고서만 오른다
+  {x:3600,y:258,w:60,h:242,rock:true},                    // 펄 앞 바위턱 (물이 다 차도 잠기지 않는다)
+  {x:3660,y:324,w:300,h:200},                             // 펄 바닥
+  {x:3960,y:224,w:200,h:276,rock:true},                   // 갓바위로 오르는 높은 바위 (펄에서 76)
+  {x:4420,y:-200,w:80,h:700},                 // 오른쪽 끝
 ];
 const spikes=[];
 const MUDS=[
@@ -89,17 +91,19 @@ const MUDS=[
   {x:1320,w:232,rate:10,stakes:[]},
   {x:1680,w:360,rate:30,stakes:[],holes:[1742,1844,1898,1988],decoys:[1778,1806,1868,1934,1957,2021]},
   {x:2640,w:560,rate:25,stakes:[2690,2750,2810,2870],deep:true},
+  {x:3660,w:300,rate:12,stakes:[3770,3850,3930]},
 ];
 const MUD_TOP=300,MUD_BED=324;
 const OYSTERS=[[2300,2470]];
 const CHANNEL={x:3330,x2:3480,floor:350,full:302};
-const SEA_X=3860;                              // 갓바위 너머 밤바다
+const SEA_X=4160;                              // 갓바위 너머 밤바다
 const FATHER={x:190};                          // 그물을 덮어쓴 몸
 const BUOY={x:1905};                           // 아버지 배의 표식이 새겨진 부표
-const GATBAWI=[{x:3930,h:74,w:26,tilt:0},{x:3990,h:52,w:20,tilt:.35}]; // 아버지 바위, 아들 바위
-const checkpoints=[{x:30,y:300},{x:940,y:300},{x:1210,y:300},{x:1570,y:300},{x:2050,y:300},{x:2500,y:300},{x:3210,y:300},{x:3492,y:300}];
-const WAITS=[1240,1600,2080,2520,2735,3235,3512,3820,4300];  // 넋이 멈춰 서서 기다리는 곳
-const ENDX=3800;
+const GATBAWI=[{x:4230,h:74,w:26,tilt:0},{x:4290,h:52,w:20,tilt:.35}]; // 아버지 바위, 아들 바위
+const checkpoints=[{x:30,y:300},{x:940,y:300},{x:1210,y:300},{x:1570,y:300},{x:2050,y:300},{x:2500,y:300},{x:3210,y:300},{x:3492,y:300},{x:3612,y:258}];
+const BASIN2={x:3660,x2:3960,low:330,full:262};      // 마지막 시험의 밀물: 아이가 올 때마다 다시 든다
+const WAITS=[1240,1600,2080,2520,2735,3235,3512,3630,4120,4600];  // 넋이 멈춰 서서 기다리는 곳
+const ENDX=4100;
 const STAKE_LIST=[];for(const m of MUDS)for(const s of m.stakes)STAKE_LIST.push(s);
 
 const grass=[];(()=>{const r=rng(7);for(const s of statics){if(s.y!==300||s.hidden)continue;for(let x=s.x+2;x<s.x+s.w-2;x+=4+r()*9)grass.push([x,s.y,1+r()*3,(r()-.5)*3]);}})();
@@ -118,7 +122,8 @@ const FARBODY=1905;
 /* 물: 1장에서는 장 끝 물골에만 한 번 밀물이 든다 */
 let chLevel=350,chT=-1;
 function tideLevel(){return chLevel;}
-function waterAt(x){if(x>=CHANNEL.x&&x<CHANNEL.x2&&chLevel<CHANNEL.floor)return chLevel;if(x>=SEA_X)return 298;return null;}
+let t2Level=330,t2T=-1;
+function waterAt(x){if(x>=BASIN2.x&&x<BASIN2.x2&&t2Level<BASIN2.low)return t2Level;if(x>=CHANNEL.x&&x<CHANNEL.x2&&chLevel<CHANNEL.floor)return chLevel;if(x>=SEA_X)return 298;return null;}
 function mudAt(x){for(const m of MUDS)if(x>=m.x&&x<m.x+m.w)return m;return null;}
 
 /* ---------- 상태 ---------- */
@@ -130,7 +135,7 @@ function initWorld(){
   spirit={st:'hidden',x:FATHER.x+14,y:300,t:0,a:0,alt:0,fly:false};
   wisp={x:2700,y:282,a:0,look:-1};
   fish={chain:0,st:'sit',t:0,amb:[{x:430,st:'sit',t:0,hy:0},{x:620,st:'sit',t:0,hy:0},{x:800,st:'sit',t:0,hy:0},{x:1000,st:'sit',t:0,hy:0}]};
-  chLevel=CHANNEL.floor;chT=-1;
+  chLevel=CHANNEL.floor;chT=-1;t2Level=BASIN2.low;t2T=-1;
   trail.fill(0);deaths=0;cpi=0;deadT=0;endT=0;endCardT=0;panDone=false;parts=[];blood=[];stains=[];bubbles=[];
   spawn();
 }
@@ -138,6 +143,7 @@ function spawn(){
   const c=checkpoints[cpi];
   p={x:c.x,y:c.y-28,w:14,h:28,vy:0,onGround:true,coyote:0,face:1,walkT:0,held:null,dead:false,moving:false,pushing:false,sink:0,breath:1.4,inWater:false,climb:false,caught:false,pull:null,anchor:null,vx:0,land:0};
   camX=clamp(p.x+7-VW*.42,-180,WORLD_END-VW);
+  if(cpi===8){t2Level=BASIN2.low;t2T=0;}
 }
 initWorld();
 
@@ -258,11 +264,11 @@ function stepPlayer(dt){
   const wl=waterAt(p.x+7);p.inWater=wl!==null&&p.y+p.h>wl+2;
   // 말뚝을 붙잡고 몸을 끌어 올리는 중
   if(p.pull){const q=p.pull;q.t+=dt;const k=Math.min(1,q.t/.6);
-    p.vx=0;p.sink=q.from*(1-k);p.y=MUD_TOP+p.sink-p.h;p.x+=(q.x-7-p.x)*Math.min(1,dt*10);p.vy=0;p.onGround=true;p.moving=false;p.walkT+=dt*.5;jumpBuf=0;
+    p.vx=0;p.sink=q.from*(1-k);p.y=MUD_TOP+p.sink-p.h;p.x+=(q.x-7-q.side*8-p.x)*Math.min(1,dt*10);p.vy=0;p.onGround=true;p.moving=false;p.walkT+=dt*.5;jumpBuf=0;
     if(k>=1){p.pull=null;p.anchor=q.x;p.sink=0;}return;}
   if(p.anchor!==null&&Math.abs(p.x+7-p.anchor)>10)p.anchor=null;
   if(G&&p.sink>0){let best=null;for(const x of STAKE_LIST)if(Math.abs(p.x+7-x)<=16&&(best===null||Math.abs(p.x+7-x)<Math.abs(p.x+7-best)))best=x;
-    if(best!==null){p.pull={t:0,from:p.sink,x:best};p.held=null;sfx('pull');return;}}
+    if(best!==null){p.pull={t:0,from:p.sink,x:best,side:Math.sign(best-(p.x+7))||p.face};p.face=p.pull.side;p.held=null;sfx('pull');return;}}
   if(G&&p.onGround&&p.sink===0){
     if(!p.held){const o=adjacentObj(p.face,8)||adjacentObj(-p.face,8);if(o){p.held=o;p.face=(o.x+o.w/2)>(p.x+p.w/2)?1:-1;}}
   }else p.held=null;
@@ -287,7 +293,7 @@ function stepPlayer(dt){
   else{p.vy+=GRAV*dt;if(p.vy<0&&!inp('jump'))p.vy+=GRAV*dt*1.4;if(p.vy>900)p.vy=900;}
   const wasAir=!p.onGround,vy=p.vy;
   p.onGround=false;p.y+=p.vy*dt;let landOn=null;
-  for(const s of playerSolids()){if(overlap(p,s)){if(p.vy>0){p.y=s.y-p.h;p.onGround=true;landOn=s;}else p.y=s.y+s.h;p.vy=0;}}
+  {const down=p.vy>0;for(const s of playerSolids()){if(overlap(p,s)){if(down){if(s.y-p.h<p.y||!landOn){p.y=s.y-p.h;p.onGround=true;landOn=s;}}else p.y=s.y+s.h;p.vy=0;}}}
   // 굴밭: 높은 데서 떨어지면 굴 껍질에 베인다 (앞선 몸 위로 내려서면 괜찮다)
   if(landOn&&wasAir&&vy>420&&statics.includes(landOn)&&!landOn.rock){const cxp=p.x+7;for(const o of OYSTERS)if(cxp>=o[0]&&cxp<o[1])return die('oyster');}
   // 펄: 받쳐 주는 것이 없으면 조금씩 빠진다. 말뚝 밑동에 붙어 있으면 버틴다.
@@ -316,7 +322,7 @@ function spiritTick(dt){
   if(!play||d>110||Math.abs(top-s.y)>5)s.fly=true;else if(d<=1)s.fly=false;
   s.moving=d>1;if(d>0)s.x+=Math.min(d,(play?(s.fly?320:60):70)*dt);s.t+=dt;
   s.y+=(top-s.y)*Math.min(1,dt*6);s.alt+=((s.fly?22:0)-s.alt)*Math.min(1,dt*5);
-  if(s.x>4180)s.a=Math.max(0,s.a-dt*.5);
+  if(s.x>4480)s.a=Math.max(0,s.a-dt*.5);
 }
 /* 도깨비불: 펄 위 말뚝 곁에 떠서, 아이 쪽으로 다가왔다 물러나며 부른다 */
 function wispTick(dt){
@@ -341,6 +347,7 @@ function fishTick(dt){
 }
 function worldTick(dt){
   // 물골에 한 번 드는 밀물
+  if(t2T>=0){t2T+=dt;if(t2T>2&&t2Level>BASIN2.full)t2Level=Math.max(BASIN2.full,t2Level-3*dt);}
   if(chT>=0){chT+=dt;if(chT>.6&&chLevel>CHANNEL.full)chLevel=Math.max(CHANNEL.full,chLevel-12*dt);}
   objs.sort((a,b)=>(b.y+b.h)-(a.y+a.h));
   for(const o of objs){
@@ -382,7 +389,7 @@ function worldTick(dt){
   if(shake>0)shake=Math.max(0,shake-dt*2);
 }
 function placeLanternAtCp(){const c=checkpoints[cpi];lantern.x=c.x+40;lantern.y=c.y-12;lantern.vy=0;lantern.held=false;lantern.inHand=false;}
-function lanternHand(){return{x:p.x+7+p.face*9-4,y:p.y+14};}
+function lanternHand(){const back=p.pull||(p.anchor!==null&&p.onGround);return{x:p.x+7+(back?-p.face*8:p.face*9)-4,y:p.y+14};}
 function die(cause){
   p.dead=true;deadT=0;p.held=null;p.pull=null;p.anchor=null;deaths++;
   if(cause==='mud'||cause==='drown'||cause==='oyster'){
@@ -420,6 +427,7 @@ function tick(dt){
         lantern.held=true;sfx('pick');}
       for(let i=cpi+1;i<checkpoints.length;i++){const c=checkpoints[i];if(p.x>c.x&&p.onGround&&Math.abs(p.y+p.h-c.y)<2){cpi=i;if(!lantern.held&&!lantern.inHand&&(lantern.x<c.x-120||(lantern.x<c.x&&waterAt(lantern.x+4)!==null)))placeLanternAtCp();}}
       if(cpi>=6&&chT<0){chT=0;sfx('tide');}
+      if(cpi===8&&t2T<0){t2T=0;sfx('tide');}
       if(lantern.held&&p.x+7>ENDX&&p.onGround){state='ending';endT=0;p.face=1;p.moving=false;p.held=null;sfx('end');}
       fade=Math.max(0,fade-dt*1.6);
     }else{
@@ -859,6 +867,17 @@ function farKidsOn(cx){const f=.5;ctx.setTransform(DPR*S,0,0,DPR*S,-cx*f*S*DPR,O
   for(const k of FARKIDS){const x=1520+((k.x+time*7)%540)*.9;if(x<cx*f-40||x>cx*f+VW+40)continue;ctx.save();ctx.translate(x,263.5);ctx.scale(.42,.42);drawChild(0,0,1,time*.45+k.ph,true,false,true,1);drawLantern(5,-15);ctx.restore();}
   if(FARBODY>cx*f-40&&FARBODY<cx*f+VW+40){ctx.save();ctx.translate(FARBODY,264);ctx.scale(.45,.45);drawBody({x:-14,y:-14,w:28,h:14,face:1});drawLantern(16,-12);ctx.restore();}}
 
+/* 말뚝을 붙잡는 팔: 어깨에서 굽은 팔, 끝은 주먹(쥠) 또는 벌린 손(뻗음) */
+function drawGripArm(sx,sy,tx,ty,open){
+  const dx=tx-sx,dy=ty-sy,L=Math.hypot(dx,dy)||1,maxL=12.5,k=Math.min(1,maxL/L),hx=sx+dx*k,hy=sy+dy*k;
+  const bend=Math.max(0,(maxL-L*k))*.45+1.2,nx=-dy/L,ny=dx/L,ex=(sx+hx)/2+nx*bend*Math.sign(dx||1),ey=(sy+hy)/2+ny*bend*Math.sign(dx||1)+1;
+  ctx.lineCap='round';ctx.lineJoin='round';
+  for(const [col,w] of [[CH_EDGE,3.6],[CH_INK,2]]){ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(sx,sy);ctx.quadraticCurveTo(ex,ey,hx,hy);ctx.stroke();}
+  const a=Math.atan2(hy-ey,hx-ex);
+  if(open){ctx.strokeStyle=CH_INK;ctx.lineWidth=.8;for(const da of [-.7,-.1,.5]){ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(hx+Math.cos(a+da)*2.6,hy+Math.sin(a+da)*2.6);ctx.stroke();}
+    ctx.fillStyle=CH_INK;ctx.beginPath();ctx.arc(hx,hy,1.3,0,Math.PI*2);ctx.fill();}
+  else{ctx.fillStyle=CH_EDGE;ctx.beginPath();ctx.ellipse(hx,hy,2.4,2,a,0,Math.PI*2);ctx.fill();ctx.fillStyle=CH_INK;ctx.beginPath();ctx.ellipse(hx,hy,1.7,1.35,a,0,Math.PI*2);ctx.fill();}
+  return [hx,hy];}
 function render(){
   const sx=shake>0?(Math.random()-.5)*shake*8:0,sy=shake>0?(Math.random()-.5)*shake*6:0;
   const cx=camX+sx;
@@ -922,15 +941,22 @@ function render(){
     if(inMud){ctx.save();ctx.beginPath();ctx.rect(lo,-200,hi-lo,MUD_TOP+200.5);ctx.clip();}
     {const q=clamp(p.land/.14,0,1)*.16;ctx.save();ctx.translate(p.x+7,p.y+28);ctx.scale(1+q,1-q);ctx.translate(-(p.x+7),-(p.y+28));
      drawChild(p.x+7,p.y+28,p.face,p.walkT,p.moving,air,armOut,lean);ctx.restore();}
-    if(inMud&&!p.pull){let st=null;for(const x of STAKE_LIST)if(Math.abs(p.x+7-x)<=26&&(st===null||Math.abs(p.x+7-x)<Math.abs(p.x+7-st)))st=x;
-      if(st!==null){const d=Math.sign(st-(p.x+7))||1,ax=p.x+7+d*2,ay=p.y+11,bx=p.x+7+d*Math.min(10,Math.abs(st-(p.x+7))+2)+Math.sin(time*9)*.6,by=p.y+6;
-        ctx.lineCap='round';ctx.strokeStyle=PAPER;ctx.lineWidth=4.4;seg(ax,ay,bx,by);ctx.strokeStyle=INK;ctx.lineWidth=2.3;seg(ax,ay,bx,by);}}
+    {// 말뚝 쪽으로 뻗는 손, 붙잡고 끌어 오르는 손, 버티고 선 손
+     const sh=[p.x+7-p.face*.6,p.y+10.8];let st=null,mode=null;
+     if(p.pull){st=p.pull.x;mode='grip';}
+     else if(p.anchor!==null&&p.onGround){st=p.anchor;mode='hold';}
+     else if(inMud){for(const x of STAKE_LIST)if(Math.abs(p.x+7-x)<=26&&(st===null||Math.abs(p.x+7-x)<Math.abs(p.x+7-st)))st=x;if(st!==null)mode='reach';}
+     if(mode){const d=Math.sign(st-(p.x+7))||p.face,gx=st-d*1.4;
+       if(mode==='grip'){const gy=MUD_TOP-19;drawGripArm(sh[0],sh[1],gx,gy,false);if(!lantern.held)drawGripArm(sh[0]+p.face*1.2,sh[1]+.6,gx,gy+3.2,false);}
+       else if(mode==='hold')drawGripArm(sh[0],sh[1],gx,p.y+9,false);
+       else{const near=Math.abs(st-(p.x+7))<=16;drawGripArm(sh[0],sh[1],gx+Math.sin(time*9)*(near?0:.8),p.y+3+Math.sin(time*7)*.6,!near);}}}
     if(lantern.held){const h=lanternHand();drawLantern(h.x,h.y+Math.sin(time*6)*.4);}
     if(inMud)ctx.restore();
   }else if(lantern.held){const h=lanternHand();drawLantern(h.x,h.y);}
   // 물: 물골의 밀물과 갓바위 너머 밤바다
   if(chLevel<CHANNEL.floor&&CHANNEL.x2>lo&&CHANNEL.x<hi)drawWater(CHANNEL,chLevel,chT>.6&&chLevel>CHANNEL.full+.5);
-  if(hi>SEA_X)drawWater({x:SEA_X,x2:4200,floor:420},298,false);
+  if(t2Level<BASIN2.low-1&&BASIN2.x2>lo&&BASIN2.x<hi)drawWater({x:BASIN2.x,x2:BASIN2.x2,floor:326},t2Level,t2T>2&&t2Level>BASIN2.full+.5);
+  if(hi>SEA_X)drawWater({x:SEA_X,x2:4500,floor:420},298,false);
   ctx.strokeStyle=PAPER;ctx.lineWidth=.7;for(const b of bubbles){ctx.beginPath();ctx.arc(b.x,b.y,1.2,0,Math.PI*2);ctx.stroke();}
 
   // 어둠과 빛: 판화처럼 층을 나눠 찍는다
