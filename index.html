@@ -56,7 +56,7 @@ const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 
 /* ---------- 세계: 1장 「넋건지기」 — 해 질 녘의 갯벌 (설계도: design/chapter1.md) ---------- */
-const WORLD_END=12700;
+const WORLD_END=23000;
 const statics=[
   {x:-260,y:-200,w:80,h:700},                 // 왼쪽 끝
   // 0~1. 깨어남과 갯길
@@ -131,6 +131,131 @@ const GATBAWI=[{x:4230,h:74,w:26,tilt:0},{x:4290,h:52,w:20,tilt:.35}]; // 아버
 const checkpoints=[{x:30,y:300},{x:940,y:300},{x:1210,y:300},{x:1570,y:300},{x:2050,y:300},{x:2500,y:300},{x:3210,y:300},{x:3492,y:300},{x:3612,y:258},
   {x:4730,y:300},{x:5120,y:210},{x:5560,y:140},{x:5940,y:140},{x:6703,y:250},{x:6840,y:150},
   {x:7720,y:210},{x:8150,y:250},{x:8540,y:250},{x:8960,y:250}, {x:9620,y:250},{x:9984,y:250},{x:10520,y:250},{x:11110,y:262}, {x:11930,y:250},{x:12310,y:178},{x:12408,y:60}];
+const DOORS=[{ax:12244,ay:250,bx:12332,by:178}];   // 꿈의 문: 들어가면 다른 문으로 나온다. 상자와 몸도 지나간다
+/* ===== 꿈의 방: 길을 막은 바위 앞의 문으로 들어가면 다른 곳의 문으로 나온다. 방마다 퍼즐 하나 (design/puzzles.md) ===== */
+checkpoints.forEach((c,i)=>c.ord=i);
+const ANNEX=13500,RDYN=[],RDECO=[],RWZ=[],RCLIMB=[],RROPE=[],RWHEEL=[],ROOMS=[],BLOCKS=[],RM={};
+let SKIPROOMS=false;
+function setSkip(v){SKIPROOMS=v;for(const w of BLOCKS)w.y=v?9000:w.y0;}
+function roomAt(x){for(const r of ROOMS)if(x>=r.O-60&&x<r.O+860)return r;return null;}
+function inRoom(o,r){const c=o.x+o.w/2;return c>=r.O-60&&c<r.O+860;}
+/* 방 하나를 세운다: 길을 막는 바위, 들어가는 문과 나오는 문, 깨어나는 자리 둘 */
+function mkRoom(id,O,ord,m,r){   // m: 본길 {blockX,blockY,blockW,ax,bx,y}, r: 방 {inY,outX,outY,need}
+  const blk={x:m.blockX,y:m.blockY,y0:m.blockY,w:m.blockW||16,h:m.y-m.blockY+200,rock:true,wall:true,boat:!!m.boat};statics.push(blk);BLOCKS.push(blk);
+  statics.push({x:O-100,y:-500,w:40,h:1200},{x:O+820,y:-500,w:40,h:1200});
+  const room={id,O,inX:O+40,inY:r.inY,outX:r.outX,outY:r.outY};ROOMS.push(room);
+  DOORS.push({ax:m.ax,ay:m.y,bx:O+40,by:r.inY},{ax:r.outX,ay:r.outY,bx:m.bx,by:m.y,need:!!r.need});
+  checkpoints.push({x:O+30,y:r.inY,ord:ord+.3,room},{x:m.bx-8,y:m.y,ord:ord+.6,lo:m.lo==null?40:m.lo});
+  return room;
+}
+const O1=14000,O2=15000,O3=16000,O4=17000,O5=18000,O6=19000,O7=20000,O8=21000,O9=22000;
+// 1 뻘배 (1장, 넓은 펄 다음)
+{const r=mkRoom('sled',O1,3,{blockX:1622,blockY:150,ax:1596,bx:1662,y:300,lo:4},{inY:300,outX:O1+740,outY:300});
+ statics.push({x:O1-60,y:300,w:180,h:200},{x:O1+120,y:324,w:400,h:200},{x:O1+520,y:300,w:300,h:200});MUDS.push({x:O1+120,w:400,rate:14,stakes:[]});
+ r.init=r.reset=()=>{objs=objs.filter(o=>!(o.type==='sled'&&inRoom(o,r)));objs.push({type:'sled',x:O1+72,y:294,w:34,h:6,vy:0,vx:0,sink:0,wt:1});};}
+// 2 갯골 마개 (1장, 밀물 물골 앞)
+{const r=mkRoom('plug',O2,6,{blockX:3286,blockY:150,ax:3262,bx:3318,y:300,lo:2},{inY:300,outX:O2+740,outY:250});
+ statics.push({x:O2-60,y:300,w:210,h:200},{x:O2+150,y:360,w:32,h:200},{x:O2+182,y:300,w:78,h:200},{x:O2+260,y:350,w:160,h:200},{x:O2+420,y:250,w:400,h:300});
+ RM.plug={lv:352};RWZ.push({x:O2+150,x2:O2+182,lv:()=>330,rush:()=>!plugged()},{x:O2+260,x2:O2+420,lv:()=>RM.plug.lv<349?RM.plug.lv:null});
+ r.init=()=>{RM.plug.lv=352;r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:'crate',x:O2+296,y:342,w:40,h:8,vy:0,wt:1});};}
+function plugged(){return objs.some(o=>o.type==='body'&&!o.ghost&&o.x+14>O2+146&&o.x+14<O2+186&&o.y>300);}
+// 3 등불을 줄로 끌어올리기 (2장, 고풀이 앞)
+{const r=mkRoom('hoist',O3,11,{blockX:5700,blockY:-20,ax:5676,bx:5742,y:140},{inY:300,outX:O3+740,outY:160,need:true});
+ statics.push({x:O3-60,y:300,w:362,h:200},{x:O3+302,y:160,w:518,h:340,rock:true});
+ RM.hoist={b:{x:O3+244,y:297,w:58,h:4,mat:'wood'}};RDYN.push(RM.hoist.b);RCLIMB.push({x:O3+284,y:146,w:18,h:154,net:true});
+ RROPE.push({pts:()=>[O3+330,150,O3+273,128]},{pts:()=>[O3+273,128,O3+273,RM.hoist.b.y]});RDECO.push({x:O3+327,y:126,w:6,h:34,z:-6,d:6,mat:'wood'},{x:O3+268,y:124,w:64,h:4,z:-6,d:5,mat:'wood'});
+ r.init=r.reset=()=>{if(!(onTop(lantern,RM.hoist.b)&&RM.hoist.b.y<290))RM.hoist.b.y=297;};}
+// 4 얇은 널 (2장, 소년이 된 뒤 큰 배 위)
+{const r=mkRoom('plank',O4,14,{blockX:7000,blockY:-10,ax:6976,bx:7042,y:150},{inY:250,outX:O4+740,outY:250});
+ statics.push({x:O4-60,y:250,w:260,h:300,rock:true},{x:O4+330,y:250,w:490,h:300,rock:true});RWZ.push({x:O4+200,x2:O4+330,lv:()=>268});
+ RM.plank={b:{x:O4+197,y:246,w:136,h:4,mat:'wood'},t:0,broken:false};RDYN.push(RM.plank.b);
+ r.init=()=>{RM.plank.b.y=246;RM.plank.t=0;RM.plank.broken=false;};r.reset=()=>{};}
+// 5 물 옮기기 (3장, 수문 다음)
+{const r=mkRoom('swap',O5,17,{blockX:8640,blockY:90,ax:8616,bx:8682,y:250},{inY:250,outX:O5+740,outY:178});
+ statics.push({x:O5-60,y:250,w:210,h:300,rock:true},{x:O5+150,y:300,w:100,h:250,rock:true},{x:O5+250,y:250,w:80,h:300,rock:true},{x:O5+330,y:300,w:100,h:250,rock:true},{x:O5+430,y:250,w:130,h:300,rock:true},{x:O5+560,y:178,w:260,h:372,rock:true});
+ RM.swap={s:0,L:{x:O5+151,y:294,w:98,h:6,mat:'wood'},R:{x:O5+331,y:250,w:98,h:6,mat:'wood'},w1:O5+76,w2:O5+290};RDYN.push(RM.swap.L,RM.swap.R);
+ RWZ.push({x:O5+150,x2:O5+250,lv:()=>RM.swap.s>.04?RM.swap.L.y+3:null},{x:O5+330,x2:O5+430,lv:()=>RM.swap.s<.96?RM.swap.R.y+3:null});
+ RWHEEL.push({x:RM.swap.w1,y:232,ang:()=>RM.swap.s*9},{x:RM.swap.w2,y:232,ang:()=>-RM.swap.s*9});
+ r.init=()=>{RM.swap.s=0;objs=objs.filter(o=>!(o.type==='crate'&&inRoom(o,r)));r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:'crate',x:O5+112,y:232,w:18,h:18,vy:0,wt:1});};}
+// 6 차오르는 방조제 (3장의 시험, 장화 앞)
+{const r=mkRoom('rise',O6,18,{blockX:9100,blockY:90,ax:9076,bx:9142,y:250},{inY:300,outX:O6+740,outY:150});
+ statics.push({x:O6-60,y:300,w:280,h:250,rock:true},{x:O6+220,y:225,w:220,h:325,rock:true},{x:O6+440,y:150,w:380,h:400,rock:true});
+ RM.rise={t:0};RWZ.push({x:O6-60,x2:O6+820,lv:()=>{const l=riseLv();return l<300?l:null;}});
+ r.init=r.reset=r.enter=()=>{RM.rise.t=0;for(const o of objs)if(o.type==='body'&&!o.ghost&&inRoom(o,r)&&o.y<280&&o.x<O6+440){o.x=Math.min(o.x,O6+190);o.y=284;o.vy=0;}};}   // 물이 빠지면 뜬 몸은 첫 바닥으로 내려와 있다
+function riseLv(){return 232+100*Math.cos(RM.rise.t/24*Math.PI*2);}
+// 7 기우는 배 (4장, 갑판 위 조타실 문)
+{const r=mkRoom('tilt',O7,19,{blockX:9784,blockY:90,blockW:12,ax:9760,bx:9818,y:250,boat:true},{inY:250,outX:O7+110,outY:95});
+ statics.push({x:O7-60,y:250,w:260,h:300,rock:true});RWZ.push({x:O7+200,x2:O7+820,lv:()=>292});
+ RM.tilt={th:-1,segs:[],mid:O7+380};for(let i=0;i<18;i++){const s={x:O7+200+i*20,y:250,w:20,h:6,mat:'hull',noObj:true,pos:(i*20+10-180)/180};RM.tilt.segs.push(s);RDYN.push(s);}
+ RDYN.push({x:O7+560,y:176,w:6,h:110,mat:'wood'},{x:O7+60,y:95,w:144,h:8,mat:'wood'});RDECO.push({x:O7+484,y:240,w:3,h:8,z:0,d:60,mat:'wood'});RCLIMB.push({x:O7+208,y:60,w:13,h:90});
+ RDECO.push({x:O7+64,y:103,w:5,h:147,z:-14,d:5,mat:'wood'},{x:O7+200,y:103,w:5,h:147,z:-14,d:5,mat:'wood'});
+ r.init=()=>{RM.tilt.th=-1;objs=objs.filter(o=>!(o.type==='crate'&&inRoom(o,r)));for(const x of [232,274])objs.push({type:'crate',x:O7+x,y:230,w:22,h:20,vy:0,wt:2});};r.reset=()=>{};}
+function tiltY(x){const t=RM.tilt;return 250+t.th*30*clamp((x-t.mid)/180,-1,1);}
+// 8 하늘의 닻줄 (4장, 뱃머리)
+{const r=mkRoom('anchor',O8,20,{blockX:10040,blockY:90,blockW:12,ax:10016,bx:10074,y:250,boat:true,lo:6},{inY:250,outX:O8+740,outY:250});
+ statics.push({x:O8-60,y:250,w:310,h:14,prop:true},{x:O8+550,y:250,w:270,h:14,prop:true});RDECO.push({x:O8-60,y:250,w:310,h:44,z:0,d:64,mat:'hull'},{x:O8+550,y:250,w:270,h:44,z:0,d:64,mat:'hull'});
+ RWZ.push({x:O8-60,x2:O8+820,lv:()=>268});RM.anchor={t:0,c:{x:O8+394,y:104,w:12,h:132,dx:0,vx:0,chain:true}};RCLIMB.push(RM.anchor.c);
+ r.init=()=>{RM.anchor.t=0;};r.reset=()=>{};}
+// 9 장롱에 숨기 (4장, 부서진 선체 들머리)
+{const r=mkRoom('hide',O9,21,{blockX:10562,blockY:90,blockW:12,ax:10540,bx:10592,y:250,boat:true,lo:4},{inY:250,outX:O9+740,outY:250});
+ statics.push({x:O9-60,y:250,w:880,h:14,prop:true});RDECO.push({x:O9-60,y:250,w:880,h:44,z:0,d:64,mat:'hull'});RWZ.push({x:O9-60,x2:O9+820,lv:()=>268});
+ RM.hide={t:0,lx:O9+380,ws:[O9+300,O9+450],gt:0};r.init=()=>{RM.hide.t=0;RM.hide.gt=0;};r.reset=()=>{};}
+function initRooms(){for(const r of ROOMS)r.init();}
+function roomsTick(dt){
+  const alive=state==='play'&&!p.dead;
+  // 뻘배: 펄 위에 뜬다. 타고 붙잡은 채 밀면 미끄러지고, 멈춰 서 있으면 가라앉아 박힌다
+  for(const o of objs){if(o.type!=='sled')continue;const m=mudAt(o.x+o.w/2),rider=alive&&onTop(p,o);
+    if(m&&o.y+o.h>=MUD_TOP-1.5){o.float=true;const gl=Math.abs(o.vx)>20;o.sink=clamp(o.sink+(rider&&!gl?9:-6)*dt,0,15);const ny=MUD_TOP-o.h+o.sink;if(rider)p.y+=ny-o.y;o.y=ny;o.vy=0;}else o.float=false;
+    if(rider&&p.riding&&o.sink<14.9)o.vx+=clamp(p.rideDir*95-o.vx,-300*dt,300*dt);else o.vx*=Math.pow(.02,dt);
+    if(Math.abs(o.vx)>1){const ox=o.x,want=o.vx*dt,oy=o.y;if(o.float)o.y=MUD_TOP-o.h-.01;moveEnt(o,want,0,solidsFor(o).filter(q=>q.type!=='body'));o.y=oy;const dx=o.x-ox;if(rider&&dx)p.x+=dx;if(Math.abs(dx)<Math.abs(want)*.5)o.vx=0;}}
+  // 갯골 마개: 몸이 물길을 막으면 옆 웅덩이에 물이 찬다
+  {const q=RM.plug;q.lv=plugged()?Math.max(262,q.lv-12*dt):Math.min(352,q.lv+30*dt);}
+  // 등불 바구니: 위에서 줄을 당기면 올라온다
+  {const b=RM.hoist.b,up=alive&&p.hoist;let d=0;if(up)d=Math.max(160-b.y,-55*dt);else if(b.y>160.5&&b.y<297)d=Math.min(297-b.y,30*dt);
+   if(d){if(!lantern.held&&onTop(lantern,b))lantern.y+=d;for(const o of objs)if(!o.ghost&&onTop(o,b))o.y+=d;if(alive&&onTop(p,b))p.y+=d;b.y+=d;}}
+  // 얇은 널: 소년의 무게를 못 견디고 부러진다
+  {const q=RM.plank;if(!q.broken){if(alive&&onTop(p,q.b)&&WT[AGE]>=2&&p.x+7>O4+240&&p.x+7<O4+300){q.t+=dt;if(q.t>.18){q.broken=true;sfx('land');shake=Math.max(shake,.15);}}else q.t=0;}else if(q.b.y<8000){q.b.y+=260*dt;if(q.b.y>420)q.b.y=9000;}}
+  // 물 옮기기: 바퀴 둘이 두 웅덩이의 물을 서로 옮긴다. 물 위의 널이 함께 오르내린다
+  {const q=RM.swap;if(alive&&p.swapW)q.s=clamp(q.s+p.swapW*dt/3,0,1);
+   for(const [d,ny] of [[q.L,294-44*q.s],[q.R,294-44*(1-q.s)]]){const dy=ny-d.y;if(dy){for(const o of objs)if(!o.ghost&&onTop(o,d))o.y+=dy;if(!lantern.held&&onTop(lantern,d))lantern.y+=dy;if(alive&&p.onGround&&onTop(p,d))p.y+=dy;d.y=ny;}}}
+  // 차오르는 방조제: 물이 들 때는 뜬 몸이 안쪽으로, 빠질 때는 바깥으로 밀린다
+  {const q=RM.rise;if(alive&&p.x>O6-80&&p.x<O6+840||q.t>0)q.t+=dt;const lv=riseLv(),rising=Math.sin(q.t/24*Math.PI*2)>0;
+   for(const o of objs){if(o.ghost||o.type!=='body'||!inRoom(o,ROOMS[5]))continue;const fl=lv<300&&Math.abs(o.y-(lv-9))<=7,onT1=!rising&&o.y<230&&o.x<O6+440&&o.x+o.w>O6+200;if(!fl&&!onT1)continue;
+     const ox=o.x;moveEnt(o,(rising?45:(onT1?-60:-20))*dt,0,solidsFor(o));const dx=o.x-ox;if(dx&&alive&&onTop(p,o))movePX(dx,false);}}
+  // 기우는 배: 무거운 쪽이 내려간다. 상자는 낮은 쪽으로 미끄러진다
+  {const q=RM.tilt,x0=O7+200,x1=O7+560;let WL=0,WR=0;const on=[];
+   for(const o of objs){if(o.ghost)continue;const c=o.x+o.w/2;if(c<x0||c>x1||Math.abs(o.y+o.h-tiltY(c))>18)continue;on.push(o);if(c<q.mid)WL+=o.wt||1;else WR+=o.wt||1;}
+   if(alive&&p.x+7>x0&&p.x+7<x1&&p.y+p.h>tiltY(p.x+7)-40){if(p.x+7<q.mid)WL+=WT[AGE];else WR+=WT[AGE];}
+   q.th+=(clamp((WR-WL)/1.5,-1,1)-q.th)*Math.min(1,dt*1.6);
+   for(const s of q.segs){const ny=250+q.th*30*s.pos,dy=ny-s.y;if(alive&&p.onGround&&onTop(p,s))p.y+=dy;if(!lantern.held&&onTop(lantern,s))lantern.y+=dy;s.y=ny;}
+   for(const o of on){if(Math.abs(q.th)>.25&&o!==p.held&&!(q.th<0&&o.x+o.w/2>O7+486))moveEnt(o,Math.sign(q.th)*50*dt,0,solidsFor(o));   // 뱃머리 턱에 걸린 상자는 되미끄러지지 않는다
+    o.y=tiltY(o.x+o.w/2)-o.h;o.vy=0;}}
+  // 하늘의 닻줄: 하늘에 뜬 배에서 내려온 줄이 천천히 흔들린다
+  {const q=RM.anchor,c=q.c;q.t+=dt;const nx=O8+394+156*Math.sin(q.t*.9);c.dx=nx-c.x;c.vx=c.dx/dt;c.x=nx;}
+  // 헛배의 불빛 하나가 갑판을 훑는다. 장롱 안에 있으면 못 본다
+  {const q=RM.hide;q.t+=dt;q.lx=O9+380+185*Math.sin(q.t/7*Math.PI*2);
+   if(alive&&p.x>O9-80&&p.x<O9+840){const lit=!p.hide&&Math.abs(p.x+7-q.lx)<60&&p.y+p.h>200;if(lit){q.gt+=dt;if(q.gt>.5){q.gt=0;die('ghost');}}else q.gt=Math.max(0,q.gt-dt*2);}}
+}
+function roomsStep(dt,G,dir){
+  const f=p.y+p.h,c=p.x+7,still=!inp('left')&&!inp('right');
+  // 꿈의 문: 문 앞에 가만히 서서 문고리를 붙잡으면 건너편 문으로 나온다
+  p.doorCd=Math.max(0,(p.doorCd||0)-dt);
+  if(G&&still&&p.onGround&&!p.held&&p.doorCd<=0)for(const d of DOORS){let to=null;
+    if(Math.abs(c-d.ax)<10&&Math.abs(f-d.ay)<2)to=[d.bx,d.by];else if(Math.abs(c-d.bx)<10&&Math.abs(f-d.by)<2)to=[d.ax,d.ay];
+    if(to){if(d.need&&!lantern.held){p.doorCd=.4;sfx('knot');break;}   // 등불 없이는 열리지 않는 문
+      p.x=to[0]-7;p.y=to[1]-p.h;p.vy=0;p.vx=0;p.doorCd=.7;fade=.92;sfx('door');camX=clamp(p.x+7-VW*.42,-180,WORLD_END-VW);
+      spirit.x=p.x+60;spirit.y=to[1];spirit.fly=true;const rm=roomAt(p.x);if(rm&&rm.enter)rm.enter();break;}}
+  // 뻘배 타기
+  const sl=objs.find(o=>o.type==='sled'&&onTop(p,o));p.riding=!!(sl&&G&&p.onGround);p.rideDir=p.riding?dir:0;if(p.riding&&dir)p.face=dir;
+  // 등불 바구니 줄 당기기
+  p.hoist=G&&p.onGround&&!p.held&&Math.abs(c-(O3+330))<13&&Math.abs(f-160)<2;if(p.hoist)p.face=-1;
+  // 물 옮기기 바퀴
+  {const q=RM.swap;p.swapW=0;if(G&&still&&p.onGround&&!p.held&&Math.abs(f-250)<2){if(Math.abs(c-q.w1)<13)p.swapW=1;else if(Math.abs(c-q.w2)<13)p.swapW=-1;}}
+  // 장롱에 숨기
+  p.hide=G&&p.onGround&&still&&RM.hide.ws.some(w=>Math.abs(c-w)<11)&&Math.abs(f-250)<2;
+  p.busy=!!(p.hoist||p.swapW);
+}
+
 const BASIN2={x:3660,x2:3960,low:330,full:262};      // 마지막 시험의 밀물: 아이가 올 때마다 다시 든다
 const WAITS=[1240,1600,2080,2520,2735,3235,3512,3630,4120, 4800,5150,5590,5960,6806,6860,7280,7600, 7760,8160,8300,8560,8980,9300, 9700,9990,10300,10540,11095,11400,11880, 12000,12320,12440,12600,12660];  // 넋이 멈춰 서서 기다리는 곳
 const ENDX=4100;
@@ -153,7 +278,7 @@ const FARBODY=1905;
 let chLevel=350,chT=-1;
 function tideLevel(){return chLevel;}
 let t2Level=330,t2T=-1;
-function waterAt(x){if(x>=BASIN2.x&&x<BASIN2.x2&&t2Level<BASIN2.low)return t2Level;if(x>=CHANNEL.x&&x<CHANNEL.x2&&chLevel<CHANNEL.floor)return chLevel;if(x>=SEA_X&&x<4700)return 298;if((x>=5400&&x<5540)||(x>=6000&&x<6700))return HARBOR_WL;
+function waterAt(x){if(x>ANNEX){for(const z of RWZ)if(x>=z.x&&x<z.x2)return z.lv();return null;}if(x>=BASIN2.x&&x<BASIN2.x2&&t2Level<BASIN2.low)return t2Level;if(x>=CHANNEL.x&&x<CHANNEL.x2&&chLevel<CHANNEL.floor)return chLevel;if(x>=SEA_X&&x<4700)return 298;if((x>=5400&&x<5540)||(x>=6000&&x<6700))return HARBOR_WL;
   if(x>=7900&&x<12000){const t=tideLv();if(x>=POOL.x&&x<POOL.x2)return t<POOL.floor?t:null;if(x>=LOWD.x&&x<LOWD.x2)return t<LOWD.floor?t:null;if(x>=SARI.x&&x<SARI.x2)return SARI.wl;if(x>=SEA4.x&&x<SEA4.x2)return SEA4.wl;}
   return null;}
 function mudAt(x){for(const m of MUDS)if(x>=m.x&&x<m.x+m.w)return m;return null;}
@@ -170,12 +295,13 @@ const CRB={x:6722,w:52},CRA={x:6792,w:28},CR_LOW=250,CR_HIGH=150;   // 도르래
 const ENDS=[{x:4100,next:9},{x:7250,next:15},{x:9330,next:19,age:2},{x:1e9,next:null}];     // 장의 끝과 다음 장의 첫 체크포인트
 const DRAGA=[90,120,160],JVA=[410,430,410],MUDK=[1,1.6,2.6],WT=[1,2,3],AGESC=[1,1.2,1.4];  // 아이, 소년, 어른
 let AGE=0,pendingAge=0,net,knot,raft,crA,crB,cargoT=0;
-function curEnd(){return ENDS[cpi<9?0:cpi<15?1:cpi<19?2:3];}
+function cpOrd(){return checkpoints[cpi].ord;}
+function curEnd(){const o=cpOrd();return ENDS[o<9?0:o<15?1:o<19?2:3];}
 function initCh2(){AGE=0;pendingAge=0;net={st:'ready',t:0,y:NETR.top,r:8,caught:false};knot={n:0,t:0,done:false};
   raft={x:RAFT_OUT,y:HARBOR_WL-6,w:90,h:10,free:false};crA={x:CRA.x,y:CR_LOW,w:CRA.w,h:4};crB={x:CRB.x,y:CR_LOW,w:CRB.w,h:4};cargoT=0;
   objs.push({type:'crate',x:6775,y:236,w:16,h:14,vy:0,wt:1});}
-function netRects(){const a=NETS.slice();if(net.st==='stuck')a.push({x:NETR.x,y:NETR.top,w:NETR.w,h:BOATD.y+6-NETR.top});a.push(LADDER);return a;}
-function dynSolids(){return [raft,crA,crB,gate].concat(debris);}
+function netRects(){const a=NETS.slice();if(net.st==='stuck')a.push({x:NETR.x,y:NETR.top,w:NETR.w,h:BOATD.y+6-NETR.top});a.push(LADDER);for(const c of RCLIMB)a.push(c);return a;}
+function dynSolids(){return [raft,crA,crB,gate].concat(debris,RDYN);}
 function onTop(e,s){return Math.abs(e.y+e.h-s.y)<2.5&&e.x<s.x+s.w&&e.x+e.w>s.x;}
 function cradleW(c){let w=0;for(const o of objs){if(o.ghost)continue;const ov=Math.min(o.x+o.w,c.x+c.w)-Math.max(o.x,c.x);if(ov>=o.w*.4&&Math.abs(o.y+o.h-c.y)<3)w+=o.wt||1;}
   if(!p.dead&&p.onGround&&Math.abs(p.y+p.h-c.y)<3&&p.x+7>=c.x&&p.x+7<c.x+c.w)w+=WT[AGE];return w;}
@@ -218,8 +344,8 @@ function ch2Step(dt,L,R,G,dir){
   if(!knot.done&&G&&p.onGround&&Math.abs(p.y+p.h-140)<2){
     if(p.x+14>=KEDGE-2&&R){p.hang=true;knot.t=0;p.held=null;return true;}
     if(p.x+7>KEDGE-44&&L&&!R&&knot.n<3){knot.t+=dt;if(knot.t>.6){knot.n++;knot.t=0;sfx('knot');}p.ropePull=true;p.face=1;p.walkT+=dt*.5;return false;}}
-  const nr=G?netRects().find(q=>overlap(p,q)):null;p.climb=!!nr;
-  if(p.climb){p.held=null;if(dir){p.face=dir;movePX(dir*SPD*.5*dt,false);}p.vy=0;p.vx=0;p.onGround=false;p.coyote=0;jumpBuf=0;
+  const nr=G?netRects().find(q=>overlap(p,q)):null;if(!nr&&p.climb&&p.cvx){p.vx=p.cvx;}p.climb=!!nr;p.cvx=nr&&nr.vx?nr.vx:0;
+  if(p.climb){p.held=null;if(nr.chain||nr.w<14)movePX((nr.dx||0)+(dir?0:((nr.x+nr.w/2)-(p.x+7))*.2),false);if(dir){p.face=dir;movePX(dir*SPD*.5*dt,false);}p.vy=0;p.vx=0;p.onGround=false;p.coyote=0;jumpBuf=0;
     if(inp('jump')){p.y-=75*dt;for(const s of playerSolids())if(overlap(p,s))p.y=s.y+s.h;p.walkT+=dt;}
     p.moving=!!dir||inp('jump');p.sink=0;return true;}
   if(raft.free&&G&&L&&!R&&p.onGround&&onTop(p,raft)&&raft.x<RAFT_MAX){p.ropePull=true;p.face=-1;p.walkT+=dt*.6;}
@@ -286,7 +412,6 @@ let waveT=0,boltT=3,ghostT=0,debris=[];
 function wavePh(){const w=waveT%WAVE_T;return w<1?1:(w<2.1?2:0);}   // 1 물보라, 2 파도
 function ghostLit(){return (boltT%BOLT_T)>=1.5;}
 /* ===== 5장 「등대」 (design/chapter5.md) ===== */
-const DOORS=[{ax:12244,ay:250,bx:12332,by:178}];   // 꿈의 문: 들어가면 다른 문으로 나온다. 상자와 몸도 지나간다
 const LADDER={x:12376,y:26,w:14,h:56},LENS={x:12462,y:36},LAMP_X=12428;
 let dawn=0,beam=0,lampPh=0,lampT=0,everG=false,noG=0,whiteT=0,finalEnd=false,epiT=0,kid=null,roomEmpty=false,drawAge=0,panHold=0;
 function initCh345(){tideT=0;flowT=0;stT=0;gate={x:GATE.x,y:GATE.closed,w:GATE.w,h:140};waveT=0;boltT=3;ghostT=0;
@@ -318,14 +443,9 @@ function ch345Tick(dt){
     if(Math.abs(cx-d.ax)<7&&Math.abs(o.y+o.h-d.ay)<3){o.x=d.bx+12;o.y=d.by-o.h;o.vy=0;sfx('door');}
     else if(Math.abs(cx-d.bx)<7&&Math.abs(o.y+o.h-d.by)<3){o.x=d.ax-12-o.w;o.y=d.ay-o.h;o.vy=0;sfx('door');}}
   // 등롱실에 닿으면 등불을 놓는다
-  if(alive&&lantern.held&&p.onGround&&Math.abs(p.y+p.h-60)<2&&p.x>LAMP_X){state='lamp';lampPh=0;lampT=0;p.face=1;p.moving=false;p.held=null;p.vx=0;spirit.st='lamp';spirit.a=1;spirit.fly=true;sfx('pick');}
+  if(alive&&lantern.held&&p.onGround&&Math.abs(p.y+p.h-60)<2&&p.x>LAMP_X&&p.x<ANNEX){state='lamp';lampPh=0;lampT=0;p.face=1;p.moving=false;p.held=null;p.vx=0;spirit.st='lamp';spirit.a=1;spirit.fly=true;sfx('pick');}
 }
 function ch345Step(dt,G){
-  // 꿈의 문: 문 앞에서 문고리를 붙잡으면 건너편 문으로 나온다
-  p.doorCd=Math.max(0,(p.doorCd||0)-dt);
-  if(G&&!inp('left')&&!inp('right')&&p.onGround&&!p.held&&p.doorCd<=0)for(const d of DOORS){const f=p.y+p.h,c=p.x+7;let to=null;
-    if(Math.abs(c-d.ax)<10&&Math.abs(f-d.ay)<2)to=[d.bx,d.by];else if(Math.abs(c-d.bx)<10&&Math.abs(f-d.by)<2)to=[d.ax,d.ay];
-    if(to){p.x=to[0]-7;p.y=to[1]-p.h;p.vy=0;p.vx=0;p.doorCd=.7;fade=.9;sfx('door');break;}}
   // 수문 바퀴
   p.wheel=G&&p.onGround&&Math.abs(p.y+p.h-300)<2&&Math.abs(p.x+7-WHEEL.x)<14&&!p.held;if(p.wheel)p.face=1;
   // 사리 물살: 물골 안에서는 왼쪽으로 밀린다
@@ -491,13 +611,15 @@ function initWorld(){
   fish={chain:0,st:'sit',t:0,amb:[{x:430,st:'sit',t:0,hy:0},{x:620,st:'sit',t:0,hy:0},{x:800,st:'sit',t:0,hy:0},{x:1000,st:'sit',t:0,hy:0}]};
   chLevel=CHANNEL.floor;chT=-1;t2Level=BASIN2.low;t2T=-1;
   trail.fill(0);deaths=0;cpi=0;deadT=0;endT=0;endCardT=0;panDone=false;parts=[];blood=[];stains=[];bubbles=[];
+  initRooms();
   spawn();
 }
 function spawn(){
   const c=checkpoints[cpi];if(pendingAge>AGE)AGE=pendingAge;
   p={x:c.x,y:c.y-28,w:14,h:28,vy:0,onGround:true,coyote:0,face:1,walkT:0,held:null,dead:false,moving:false,pushing:false,sink:0,breath:1.4,inWater:false,climb:false,caught:false,pull:null,anchor:null,vx:0,land:0,hang:false,ropePull:false};
   camX=clamp(p.x+7-VW*.42,-180,WORLD_END-VW);
-  if(cpi===8){t2Level=BASIN2.low;t2T=0;}
+  if(Math.floor(cpOrd())===8){t2Level=BASIN2.low;t2T=0;}
+  if(c.room&&c.room.reset)c.room.reset();
 }
 initWorld();
 
@@ -582,6 +704,7 @@ function sfx(k){
   else if(k==='land'){noiseBurst(.12,.12);}
   else if(k==='fall'){tone(220,1.2,'sine',.08,.25);}
   else if(k==='door'){tone(196,.7,'sine',.09,1.5);tone(294,.9,'sine',.05,1.5,.08);noiseBurst(.2,.05);}
+  else if(k==='crack'){noiseBurst(.3,.2);tone(90,.5,'square',.05,.5);}
   else if(k==='bolt'){noiseBurst(.9,.22);tone(60,1.4,'sine',.2,.5,.05);}
   else if(k==='gate'){tone(150,.9,'sawtooth',.03,1.2);noiseBurst(.3,.04);}
   else if(k==='ghost'){tone(130,1.6,'sine',.14,.5);tone(196,1.6,'sine',.06,.5,.1);noiseBurst(.5,.08);}
@@ -593,7 +716,7 @@ function sfx(k){
 const solidObjs=()=>objs.filter(o=>!o.ghost);
 function mudFloorP(){const m=mudAt(p.x+7);return m?[{x:m.x,y:MUD_TOP+p.sink,w:m.w,h:40,mud:true}]:[];}
 function playerSolids(){return statics.concat(solidObjs(),dynSolids(),mudFloorP());}
-function solidsFor(o){const a=statics.slice();for(const m of MUDS)if(!m.deep)a.push({x:m.x,y:MUD_BED-8,w:m.w,h:30});for(const q of objs)if(q!==o&&!q.ghost)a.push(q);for(const d of dynSolids())a.push(d);return a;}
+function solidsFor(o){const a=statics.slice();for(const m of MUDS)if(!m.deep)a.push({x:m.x,y:MUD_BED-8,w:m.w,h:30});for(const q of objs)if(q!==o&&!q.ghost)a.push(q);for(const d of dynSolids())if(!d.noObj)a.push(d);return a;}
 function moveEnt(e,dx,dy,sol){
   let hit=false;
   if(dx){e.x+=dx;for(const s of sol){if(s!==e&&overlap(e,s)){e.x=dx>0?s.x-e.w:s.x+s.w;hit=true;}}}
@@ -630,7 +753,7 @@ let grabPrev=false,bGhint=false;const bGel=document.getElementById('bG')||{};
 function stepPlayer(dt){
   const L=inp('left'),R=inp('right'),G=inp('grab');let dir=(R?1:0)-(L?1:0);const gEdge=G&&!grabPrev;grabPrev=G;
   const wl=waterAt(p.x+7);p.inWater=wl!==null&&p.y+p.h>wl+2;
-  p.wheel=false;p.brace=false;if(ch2Step(dt,L,R,G,dir))return;ch345Step(dt,G);if(p.ropePull||p.wheel||p.brace)dir=0;
+  p.wheel=false;p.brace=false;p.busy=false;p.riding=false;p.hide=false;p.hoist=false;p.swapW=0;if(ch2Step(dt,L,R,G,dir))return;ch345Step(dt,G);roomsStep(dt,G,dir);if(p.ropePull||p.wheel||p.brace||p.busy||p.riding||p.hide)dir=0;
   // 말뚝을 붙잡고 몸을 끌어 올리는 중
   if(p.pull){const q=p.pull;q.t+=dt;const k=Math.min(1,q.t/.6);
     p.vx=0;p.sink=q.from*(1-k);p.y=MUD_TOP+p.sink-p.h;p.x+=(q.x-7-q.side*8-p.x)*Math.min(1,dt*10);p.vy=0;p.onGround=true;p.moving=false;p.walkT+=dt*.5;jumpBuf=0;
@@ -638,7 +761,7 @@ function stepPlayer(dt){
   if(p.anchor!==null&&Math.abs(p.x+7-p.anchor)>10)p.anchor=null;
   if(G&&p.sink>0){let best=null;for(const x of STAKE_LIST)if(Math.abs(p.x+7-x)<=16&&(best===null||Math.abs(p.x+7-x)<Math.abs(p.x+7-best)))best=x;
     if(best!==null){p.pull={t:0,from:p.sink,x:best,side:Math.sign(best-(p.x+7))||p.face};p.face=p.pull.side;p.held=null;sfx('pull');return;}}
-  if(G&&p.onGround&&p.sink===0){
+  if(G&&p.onGround&&p.sink===0&&!p.riding&&!p.busy&&!p.wheel){
     if(!p.held){const o=adjacentObj(p.face,8)||adjacentObj(-p.face,8);if(o){p.held=o;p.face=(o.x+o.w/2)>(p.x+p.w/2)?1:-1;}}
   }else p.held=null;
   if(p.held){const o=p.held,gap=p.face>0?o.x-(p.x+p.w):p.x-(o.x+o.w);if(!objs.includes(o)||Math.abs((o.y+o.h)-(p.y+p.h))>8||gap>12)p.held=null;}
@@ -648,8 +771,8 @@ function stepPlayer(dt){
   if(p.held){
     const o=p.held,dx=dir*DRAGA[AGE]*slow*dt;
     if(dx){
-      if(dir===p.face){const ox=o.x;moveEnt(o,dx,0,solidsFor(o));movePX(o.x-ox,false);}
-      else{const ox=p.x;movePX(dx,false);moveEnt(o,p.x-ox,0,solidsFor(o));}
+      if(dir===p.face){const ox=o.x;moveEnt(o,dx,0,solidsFor(o));movePX(o.x-ox,true);}
+      else{const ox=p.x;movePX(dx,true);moveEnt(o,p.x-ox,0,solidsFor(o));}
     }
     p.vx=0;
   }else{ // 살짝 미끄러지듯 출발하고 멈춘다 (공중에서는 방향을 덜 바꾼다)
@@ -683,8 +806,10 @@ function spiritTick(dt){
   const s=spirit;
   if(s.st==='hidden'||s.st==='lamp')return;
   if(s.st==='rise'){s.t+=dt;s.a=Math.min(1,s.t/.4);s.fly=true;s.alt+=(24-s.alt)*Math.min(1,dt*5);if(s.t>.5){s.st='walk';s.wi=0;}return;}
-  if(state==='play'&&!p.dead){while(s.wi<WAITS.length-2&&p.x+7>WAITS[s.wi]-50)s.wi++;}
-  const play=state==='play';let goal=play?Math.min(Math.max(p.x+190,s.x),WAITS[s.wi]):(curEnd().x+500);if(play&&goal>10548&&goal<11095)goal=p.x>10925?11095:Math.max(s.x,10548);   // 넋은 헛배의 불빛 아래에 머물지 않는다
+  const rmS=state==='play'&&p.x>ANNEX?roomAt(p.x):null;
+  if(state==='play'&&!p.dead&&!rmS){while(s.wi<WAITS.length-2&&p.x+7>WAITS[s.wi]-50)s.wi++;}
+  const play=state==='play';let goal=play?Math.min(Math.max(p.x+190,s.x),WAITS[s.wi]):(curEnd().x+500);if(rmS)goal=Math.min(Math.max(p.x+190,s.x),rmS.outX-40);
+  if(play&&goal>10548&&goal<11095)goal=p.x>10925?11095:Math.max(s.x,10548);   // 넋은 헛배의 불빛 아래에 머물지 않는다
   const d=goal-s.x;
   let top=MUD_TOP;for(const q of statics)if(!q.hidden&&q.h<700&&s.x>=q.x&&s.x<q.x+q.w&&q.y<top)top=q.y;
   {const sw=waterAt(s.x);if(sw!==null)top=Math.min(top,sw-1);}
@@ -696,7 +821,7 @@ function spiritTick(dt){
 }
 /* 도깨비불: 펄 위 말뚝 곁에 떠서, 아이 쪽으로 다가왔다 물러나며 부른다 */
 function wispTick(dt){
-  const w=wisp,show=(state==='play')&&cpi>=5&&p.x<3150;
+  const w=wisp,show=(state==='play')&&cpOrd()>=5&&p.x<3150;
   w.a+=((show?1:0)-w.a)*Math.min(1,dt*(show?.8:2));
   const inMud=p.x+7>2640&&p.y+p.h>284;
   const tx=(inMud?clamp(p.x+80,2720,3010):2700)+Math.sin(time*.8)*26;w.x+=(tx-w.x)*Math.min(1,dt*1.4);
@@ -717,12 +842,12 @@ function fishTick(dt){
 }
 function worldTick(dt){
   // 물골에 한 번 드는 밀물
-  ch2Tick(dt);ch345Tick(dt);
+  ch2Tick(dt);ch345Tick(dt);roomsTick(dt);
   if(t2T>=0){t2T+=dt;if(t2T>2&&t2Level>BASIN2.full)t2Level=Math.max(BASIN2.full,t2Level-3*dt);}
   if(chT>=0){chT+=dt;if(chT>.6&&chLevel>CHANNEL.full)chLevel=Math.max(CHANNEL.full,chLevel-12*dt);}
   objs.sort((a,b)=>(b.y+b.h)-(a.y+a.h));
   for(const o of objs){
-    if(o.ghost)continue;
+    if(o.ghost||o.float)continue;
     o.vy=Math.min(o.vy+GRAV*dt,900);if(moveEnt(o,0,o.vy*dt,solidsFor(o)))o.vy=0;
     // 물에 뜨는 몸: 물이 차면 쓰러진 그 자리에서 떠오른다
     const wl=waterAt(o.x+o.w/2);
@@ -759,11 +884,11 @@ function worldTick(dt){
    for(let b=Math.max(0,b0);b<=Math.min(trail.length-1,b1);b++){const d=Math.abs(b*8+4-lx)/70;if(d<1)trail[b]=Math.min(1,trail[b]+dt*rate*(1-d));}}
   if(shake>0)shake=Math.max(0,shake-dt*2);
 }
-function twoHands(){return !!(p.climb||p.hang||p.wheel||p.ropePull);}
-function placeLanternAtCp(){const c=checkpoints[cpi];lantern.x=c.x+40;lantern.y=c.y-12;lantern.vy=0;lantern.held=false;lantern.inHand=false;}
+function twoHands(){return !!(p.climb||p.hang||p.wheel||p.ropePull||p.busy);}
+function placeLanternAtCp(){const c=checkpoints[cpi];lantern.x=c.x+(c.lo==null?40:c.lo);lantern.y=c.y-12;lantern.vy=0;lantern.held=false;lantern.inHand=false;}
 function lanternHand(){const back=p.pull||(p.anchor!==null&&p.onGround);return{x:p.x+7+(back?-p.face*8:p.face*9)-4,y:p.y+14};}
 function die(cause){
-  p.dead=true;deadT=0;p.held=null;p.pull=null;p.anchor=null;p.caught=false;p.hang=false;p.ropePull=false;p.wheel=false;p.brace=false;deaths++;
+  p.dead=true;deadT=0;p.held=null;p.pull=null;p.anchor=null;p.caught=false;p.hang=false;p.ropePull=false;p.wheel=false;p.brace=false;p.busy=false;p.riding=false;p.hide=false;p.hoist=false;p.swapW=0;deaths++;
   if(cause==='mud'||cause==='drown'||cause==='oyster'||cause==='cargo'){
     const b={type:'body',x:p.x+p.w/2-14,y:cause==='mud'?MUD_BED-22:p.y+p.h-14,w:28,h:14,vy:0,face:p.face,wt:WT[AGE]};
     if(cause==='oyster'){b.bloody=true;b.bt=0;b.seed=(Math.random()*1e9)|0;
@@ -804,10 +929,10 @@ function tick(dt){
       else if(!twoHands()&&overlap(p,{x:lantern.x-4,y:lantern.y-4,w:16,h:20})){
         if(lantern.inHand){lantern.inHand=false;if(spirit.st==='hidden'){spirit.st='rise';spirit.t=0;sfx('wing');}}
         lantern.held=true;sfx('pick');}
-      for(let i=cpi+1;i<checkpoints.length;i++){const c=checkpoints[i];if(p.x>c.x&&p.onGround&&Math.abs(p.y+p.h-c.y)<2){cpi=i;if(!lantern.held&&!lantern.inHand&&(lantern.x<c.x-120||lantern.y>c.y+30||(lantern.x<c.x&&waterAt(lantern.x+4)!==null)))placeLanternAtCp();}}
-      if(cpi>=6&&chT<0){chT=0;sfx('tide');}
-      if(cpi===8&&t2T<0){t2T=0;sfx('tide');}
-      if(lantern.held&&p.x+7>curEnd().x&&p.onGround){state='ending';endT=0;p.face=1;p.moving=false;p.held=null;sfx('end');}
+      for(let i=0;i<checkpoints.length;i++){const c=checkpoints[i];if(c.ord>cpOrd()&&p.x>c.x&&p.x<c.x+900&&p.onGround&&Math.abs(p.y+p.h-c.y)<2){cpi=i;if(!lantern.held&&!lantern.inHand&&(lantern.x<c.x-120||lantern.x>c.x+700||lantern.y>c.y+30||(lantern.x<c.x&&waterAt(lantern.x+4)!==null)))placeLanternAtCp();}}
+      if(cpOrd()>=6&&chT<0){chT=0;sfx('tide');}
+      if(Math.floor(cpOrd())===8&&t2T<0){t2T=0;sfx('tide');}
+      if(lantern.held&&p.x<ANNEX&&p.x+7>curEnd().x&&p.onGround){state='ending';endT=0;p.face=1;p.moving=false;p.held=null;sfx('end');}
       fade=Math.max(0,fade-dt*1.6);
     }else{
       deadT+=dt;fade=clamp((deadT-.45)/.5,0,1);
@@ -1240,6 +1365,13 @@ function render(){
   if(FATHER.x+80>lo&&FATHER.x-80<hi&&state!=='epi'&&!finalEnd){if(dawn>.3)drawBoots(FATHER.x-64,300);drawFather();}
   if(hi>4900)drawCh2(lo,hi);
   if(hi>7600||kid)drawCh345(lo,hi);
+  // 꿈의 문과 방의 장치 (2D로 그릴 때)
+  for(const d of RDECO)if(d.x<hi&&d.x+d.w>lo)haloFill(()=>{ctx.beginPath();ctx.rect(d.x,d.y,d.w,d.h);},1.4,d.mat==='hull'?C_HULL:C_WOOD);
+  for(const d of RDYN)if(d.y<5000&&d.x<hi&&d.x+d.w>lo)haloFill(()=>{ctx.beginPath();ctx.rect(d.x,d.y,d.w,d.h);},1.4,d.mat==='hull'?C_HULL:C_WOOD);
+  for(const c of RCLIMB)if(c.x<hi&&c.x+c.w>lo){ctx.strokeStyle=K;ctx.lineWidth=1.2;seg(c.x+c.w/2,c.y-200,c.x+c.w/2,c.y+c.h);}
+  for(const q of RROPE){const a=q.pts();if(a[0]<hi+200&&a[0]>lo-200){ctx.strokeStyle=LT;ctx.lineWidth=1.2;seg(a[0],a[1],a[2],a[3]);}}
+  for(const d of DOORS)for(const [x,y] of [[d.ax,d.ay],[d.bx,d.by]])if(x>lo-20&&x<hi+20)haloFill(()=>{ctx.beginPath();ctx.rect(x-13,y-68,26,68);},1.8,'#e6dcc4');
+  if(hi>ANNEX){const q=RM.hide;ctx.fillStyle='#dff3ee';ctx.beginPath();ctx.arc(q.lx,186,6,0,Math.PI*2);ctx.fill();}
   ctx.fillStyle=K;for(const q of parts)ctx.fillRect(q.x-1,q.y-1,2.4,2.4);
   // 피 얼룩과 흐르는 방울
   ctx.fillStyle=ctx.strokeStyle='#7a1f1a';ctx.lineCap='round';
@@ -1257,7 +1389,7 @@ function render(){
   if(spirit.st!=='hidden')drawSpirit(spirit.x,spirit.y-spirit.alt-Math.abs(Math.sin(time*2.2))*.8,spirit.a,spirit.alt>4,spirit.moving);
   if(wisp.a>.01)drawWisp(wisp.x,wisp.y,wisp.a*(.8+.2*Math.sin(time*23)*Math.sin(time*7)),wisp.look);
   // 아이들
-  for(const o of objs){if(o.x>hi||o.x+o.w<lo)continue;if(o.type==='crate')drawCrate(o);else drawBody(o);}
+  for(const o of objs){if(o.x>hi||o.x+o.w<lo)continue;if(o.type==='body')drawBody(o);else drawCrate(o);}
   if(!lantern.held)drawLantern(lantern.x,lantern.y);
   if(!p.dead){
     const air=!p.onGround,armOut=lantern.held||!!p.held||!!p.pull||p.climb||p.hang||p.ropePull||p.wheel||p.brace||state==='lamp',lean=p.pull?2:(p.held&&inp(p.face>0?'left':'right')?-2:(p.held?2:(p.moving?1:0)));
@@ -1287,6 +1419,7 @@ function render(){
     if(t<POOL.floor-1)drawWater(POOL,t,false);if(t<LOWD.floor-1)drawWater(LOWD,t,false);
     drawWater({x:SARI.x,x2:SARI.x2,floor:420},SARI.wl,flowOn());}
   if(hi>SEA4.x&&lo<SEA4.x2){const a=Math.max(SEA4.x,Math.floor(lo/110)*110-110),b=Math.min(SEA4.x2,hi+20);if(a<11100)drawWater({x:a,x2:Math.min(b,11100),floor:420},SEA4.wl,true);if(b>11100)drawWater({x:Math.max(a,11100),x2:b,floor:420},SEA4.wl,false);}
+  for(const z of RWZ){if(z.x2<lo||z.x>hi)continue;const lv=z.lv();if(lv!==null)drawWater({x:z.x,x2:z.x2,floor:420},lv,false);}
   drawStorm(lo,hi,cx);
   ctx.strokeStyle=LT;ctx.lineWidth=.8;for(const b of bubbles){ctx.beginPath();ctx.arc(b.x,b.y,1.2,0,Math.PI*2);ctx.stroke();}
 
@@ -1364,7 +1497,8 @@ function init3D(){
   const ghostL=GHOST.map(c=>{const l=new T.PointLight(0x66d6c6,0,170,1.6);l.position.set(c,-190,10);sc.add(l);return l;});
   const topAt=x=>{let t=300;for(const st of statics)if(!st.hidden&&!st.prop&&st.h<700&&x>=st.x&&x<st.x+st.w&&st.y<t)t=st.y;return t;};
   // 땅과 바위: 부딪히는 네모 그대로 깊이를 주어 세운다
-  for(const st of statics){if(st.hidden||st.prop||st.h>=700)continue;const bot=Math.min(st.y+st.h,480);gbox(st.x,st.y,st.w,bot-st.y,-45,210,st.rock?M.rock:M.ground);
+  for(const st of statics){if(st.hidden||st.prop||st.h>=700)continue;const bot=Math.min(Math.min(st.y,400)+st.h,480);if(st.boat){gbox(st.x,st.y,st.w,bot-st.y,-8,46,M.wood);continue;}
+    if(st.wall){const hh=bot-st.y,m=st.x+st.w/2;add(jit(new T.CylinderGeometry(st.w*1.1,st.w*2.4,hh,7,4),5),M.rock,m,-(st.y+hh/2),-34).scale.z=2.6;add(jit(new T.IcosahedronGeometry(st.w*1.3,0),4),M.rock,m-4,-st.y+2,-30);gbox(st.x,st.y,st.w,hh,20,80,M.rock);continue;}gbox(st.x,st.y,st.w,bot-st.y,-45,210,st.rock?M.rock:M.ground);
     if(st.cap){const m=st.x+st.w/2;add(jit(new T.CylinderGeometry(st.w*.2,st.w*.3,300-st.y-20,6,3),3),M.rock,m,-(st.y+20+(300-st.y-20)/2),-70);}
     if(st.w>70&&!st.cap)for(let i=0;i<Math.floor(st.w/110);i++){const s=6+r()*12;add(jit(new T.IcosahedronGeometry(s,0),s*.3),st.rock?M.rock:M.ground,st.x+10+r()*(st.w-20),-st.y+s*.2,-95-r()*45);}}
   // 갯벌답게: 물결 자국, 고인 물, 게 구멍과 뻘 알갱이
@@ -1433,12 +1567,27 @@ function init3D(){
   for(let x=700;x<13200;x+=900+r()*900){const p=add(new T.BoxGeometry(3+r()*2.5,900,4),M.black,x,-200,330,null,true);p.rotation.z=(r()-.5)*.24;
     if(r()<.5){const L=160+r()*120;fixSeg(M.black,1.2,x,60,x+L*.5,96,330);fixSeg(M.black,1.2,x+L*.5,96,x+L,66,330);for(let k=1;k<4;k++)add(new T.SphereGeometry(2.6,6,5),M.black,x+L*k/4,-(74+Math.sin(k/4*Math.PI)*22),330,null,true);}}
   // 갯벌에 박힌 방의 물건들: 장롱, 홀로 선 방문, 밥상
-  const wdk=mat(0x4a3526),paper=mat(0xe6dcc4),brass=mat(0xb8923a);
-  const mkWardrobe=(x,z,tilt,sink)=>{const g=new T.Group();box(48,72,26,wdk,0,36,0,g);for(const dx of [-12,12]){box(21,62,1.5,M.wood,dx,37,13.4,g);add(new T.SphereGeometry(1.6,6,5),brass,dx>0?dx-8:dx+8,38,15,g);}box(52,4,28,wdk,0,74,0,g);g.position.set(x,-topAt(x)-sink,z);g.rotation.z=tilt;g.rotation.y=.25;sc.add(g);return g;};
-  const mkDoor=(x,z,open)=>{const g=new T.Group();box(4,74,5,wdk,-17,37,0,g);box(4,74,5,wdk,17,37,0,g);box(38,4,5,wdk,0,75,0,g);const d=new T.Group();d.position.set(-15,0,0);box(30,70,1.6,paper,15,36,0,d);for(let i=1;i<6;i++)box(30,1,2.4,wdk,15,i*12,0,d);for(let i=1;i<3;i++)box(1,70,2.4,wdk,i*10,36,0,d);add(new T.TorusGeometry(2,.5,4,8),brass,26,34,1.6,d);d.rotation.y=-open;g.add(d);g.position.set(x,-topAt(x)+6,z);g.rotation.z=.05;sc.add(g);return g;};
+  const wdk=mat(0x4a3526),paper=mat(0xe6dcc4,{emissive:0xffc070,emissiveIntensity:.3}),brass=mat(0xb8923a);
+  const mkWardrobe=(x,z,tilt,sink,y)=>{const g=new T.Group();box(48,72,26,wdk,0,36,0,g);for(const dx of [-12,12]){box(21,62,1.5,M.wood,dx,37,13.4,g);add(new T.SphereGeometry(1.6,6,5),brass,dx>0?dx-8:dx+8,38,15,g);}box(52,4,28,wdk,0,74,0,g);g.position.set(x,-(y==null?topAt(x):y)-sink,z);g.rotation.z=tilt;g.rotation.y=y==null?.25:0;sc.add(g);return g;};
+  const mkDoor=(x,z,open,y)=>{const g=new T.Group();box(4,74,5,wdk,-17,37,0,g);box(4,74,5,wdk,17,37,0,g);box(38,4,5,wdk,0,75,0,g);const d=new T.Group();d.position.set(-15,0,0);box(30,70,1.6,paper,15,36,0,d);for(let i=1;i<6;i++)box(30,1,2.4,wdk,15,i*12,0,d);for(let i=1;i<3;i++)box(1,70,2.4,wdk,i*10,36,0,d);add(new T.TorusGeometry(2,.5,4,8),brass,26,34,1.6,d);d.rotation.y=-open;g.add(d);g.position.set(x,y==null?-topAt(x)+6:-y,z);g.rotation.z=y==null?.05:0;sc.add(g);return g;};
   const mkTable=(x,z)=>{const g=new T.Group();add(new T.CylinderGeometry(15,15,2,8),wdk,0,9,0,g);for(const [a,b] of [[-9,-7],[9,-7],[-9,7],[9,7]])box(2,9,2,wdk,a,4.5,b,g);add(new T.CylinderGeometry(3.4,2.2,3,8),paper,-4,11.5,2,g);add(new T.CylinderGeometry(2.6,1.8,2.4,8),paper,5,11.2,-3,g);g.position.set(x,-topAt(x)+3,z);g.rotation.z=-.16;sc.add(g);return g;};
-  mkWardrobe(770,-78,.32,30);mkDoor(1622,-66,.7);mkTable(2458,-70);mkWardrobe(3262,-84,-.22,38);mkDoor(5740,-70,.4);mkTable(7790,-64);mkWardrobe(9120,-80,.4,34);
-  for(const d of DOORS){mkDoor(d.ax,-17,.9);mkDoor(d.bx,-17,.9);}
+  mkWardrobe(770,-78,.32,30);mkTable(2458,-70);mkWardrobe(3262,-84,-.22,38);mkTable(7790,-64);mkWardrobe(9120,-80,.4,34);
+  for(const d of DOORS){mkDoor(d.ax,-17,.9,d.ay);mkDoor(d.bx,-17,.9,d.by);}
+  // 꿈의 방들의 장치
+  const RMAT={wood:M.wood,hull:M.hull,steel:M.steel,white:M.white,rock:M.rock};
+  for(const d of RDECO)gbox(d.x,d.y,d.w,d.h,d.z||0,d.d||40,RMAT[d.mat]||M.wood);
+  const rdynM=RDYN.map(d=>box(d.w,d.h,d.noObj?64:(d.d||34),RMAT[d.mat]||M.wood,0,0,0));
+  for(const z of RWZ){z.m=add(new T.BoxGeometry(z.x2-z.x,1,208),M.water,(z.x+z.x2)/2,0,-45,null,true);z.m.receiveShadow=true;zones.push(z);}
+  const rclM=RCLIMB.map(c=>{if(c.net)return add(new T.PlaneGeometry(c.w,c.h,3,14),M.net,0,0,4,null,true);const g=new T.Group();box(1.8,c.h+(c.chain?560:0),1.8,c.chain?M.steel:M.white,0,c.chain?280:0,0,g);if(c.chain){const a=add(new T.TorusGeometry(8,1.8,5,8,Math.PI),M.steel,0,-c.h/2+2,0,g);a.rotation.z=Math.PI;box(20,2.4,2.4,M.steel,0,-c.h/2+12,0,g);}sc.add(g);return g;});
+  const rropeM=RROPE.map(()=>seg(M.white,1.2));
+  const rwhM=RWHEEL.map(w=>{const m=add(new T.TorusGeometry(9,1.6,5,10),M.steel,w.x,-w.y,-8);for(let i=0;i<2;i++)box(18,1.4,1.4,M.steel,0,0,0,m).rotation.z=i*Math.PI/2;fixSeg(M.steel,2.4,w.x,w.y+18,w.x,w.y+9,-8);return m;});
+  const sledsM=[];
+  const hideLamp=add(new T.SphereGeometry(6.4,8,6),M.teal,0,-182,10,null,true),hideL=new T.PointLight(0x66d6c6,0,170,1.6);sc.add(hideL);
+  {const k=mat(0x0d1114);gbox(O9+60,88,700,64,-150,90,k);gbox(O9+280,56,90,36,-150,60,k);gbox(O9+470,66,60,24,-150,50,k);}
+  for(const w of RM.hide.ws)mkWardrobe(w,-20,0,0,250);
+  fixSeg(M.wood,3.4,O3+330,160,O3+330,126,-6);
+  for(const O of [O1,O2]){const f=add(new T.PlaneGeometry(2600,1500,1,1).rotateX(-Math.PI/2),M.ground,O+400,-300.7,-900,null,true);f.receiveShadow=true;}
+  {const b=add(new T.PlaneGeometry(10000,6200,1,1).rotateX(-Math.PI/2),M.sea,19000,-270,-3250,null,true);b.receiveShadow=true;}
   // 꿈의 어긋남: 하늘에 떠 가는 배, 공중을 헤엄치는 짱뚱어
   const skyBoats=[[1700,900,-2300],[6200,1050,-2700],[10400,950,-2500],[3900,1250,-3300]].map(([x,y,z],i)=>{const g=new T.Group();add(jit(new T.BoxGeometry(260,50,80,3,1,1),8),i%2?M.red:M.hull,0,0,0,g,true);add(new T.BoxGeometry(70,50,56),M.cabin,-30,50,0,g,true);add(new T.BoxGeometry(5,150,5),M.steel,30,100,0,g,true);g.position.set(x,y,z);g.userData.b=[x,y,i];sc.add(g);return g;});
   const airFish=[];for(const [x,y] of [[980,150],[2240,120],[3560,170],[5300,90],[8700,150],[11500,170]])for(let i=0;i<4;i++){const g=new T.Group();add(new T.BoxGeometry(13,4.4,4),M.shell,0,0,0,g);const tl=box(6,3.4,1,M.shell,-9,0,0,g);add(new T.SphereGeometry(1.4,5,4),M.white,4.6,1.8,1.7,g);box(4,4,.8,M.hull,-1,3.6,0,g);g.userData.f=[x+i*34-50,y+(i%2)*26,i*1.7+x,tl];sc.add(g);airFish.push(g);}
@@ -1507,7 +1656,7 @@ function init3D(){
   let camVO=0;
   function resize3(){rn.setPixelRatio(DPR);rn.setSize(W,H,false);const c=rn.domElement;c.style.width=W+'px';c.style.height=H+'px';}
   function draw(){
-    const sx=shake>0?(Math.random()-.5)*shake*8:0,cx=camX+sx,tx=cx+VW/2,nk=clamp((tx-800)/1900,0,1),storm=clamp(Math.min((tx-9450)/300,(11300-tx)/300),0,1),ch1=clamp((4500-cx)/300,0,1);
+    const sx=shake>0?(Math.random()-.5)*shake*8:0,cx=camX+sx,tx=cx+VW/2,nk=clamp((tx-800)/1900,0,1),storm=tx>19900&&tx<22900?1:clamp(Math.min((tx-9450)/300,(11300-tx)/300),0,1),ch1=clamp((4500-cx)/300,0,1);
     cam.aspect=VW/WH;cam.updateProjectionMatrix();camVO+=(clamp((150-p.y)*.7,0,90)-camVO)*.06;cam.position.set(tx,-128+camVO,672);cam.lookAt(tx,-186+camVO,0);
     // 하늘과 빛
     const flash=storm>0&&(boltT%BOLT_T)<.16?1:0;
@@ -1520,7 +1669,7 @@ function init3D(){
     // 물
     for(const z of zones){const lv=z.lv();z.m.visible=lv!==null&&z.x2>cx-400&&z.x<cx+VW+400;if(z.m.visible){z.m.scale.y=480-lv;z.m.position.y=-(lv+480)/2;}}
     // 아이
-    const alive=!p.dead;hero.g.visible=alive;
+    const alive=!p.dead;hero.g.visible=alive&&!p.hide;
     if(alive){const air=!p.onGround,armOut=lantern.held||!!p.held||!!p.pull||p.climb||p.hang||p.ropePull||p.wheel||p.brace||state==='lamp';
       poseChild(hero,p.x+7,p.y+28+Math.min(0,0),p.face,p.walkT,p.moving,air,armOut,AGE);}
     kidM.g.visible=!!kid&&state!=='end';if(kidM.g.visible)poseChild(kidM,kid.x,300,1,kid.t,kid.moving,false,false,0);
@@ -1529,7 +1678,7 @@ function init3D(){
     const fl=1+Math.sin(time*13)*.03+Math.sin(time*7.3)*.03;lampL.position.set(lx+(lantern.held?p.face*6:0),-ly+26,lz+44);lampL.intensity=(lantern.inHand?7000:15000)*fl*(1-.45*dawn);
     // 누운 몸과 상자
     let bi=0,ci=0;for(const o of objs){if(o.x>cx+VW+300||o.x+o.w<cx-300)continue;
-      if(o.type==='crate'){let m=crates[ci++];if(!m){m=box(1,1,1,M.wood,0,0,0);crates.push(m);}m.visible=true;m.scale.set(o.w,o.h,o.w);m.position.set(o.x+o.w/2,-(o.y+o.h/2),1);}
+      if(o.type!=='body'){let m=crates[ci++];if(!m){m=box(1,1,1,M.wood,0,0,0);crates.push(m);}m.visible=true;m.scale.set(o.w,o.h,o.type==='sled'?26:Math.min(o.w,30));m.position.set(o.x+o.w/2,-(o.y+o.h/2),1);}
       else{let m=bodies[bi++];if(!m){m=mkBody();bodies.push(m);}m.visible=true;const k=AGESC[(o.wt||1)-1]||1;m.scale.setScalar(k);m.position.set(o.x+o.w/2,-(o.y+o.h),o.ghost?-3:0);m.rotation.y=(o.face||1)>0?0:Math.PI;m.userData.t.visible=(o.wt||1)<3;}}
     for(;bi<bodies.length;bi++)bodies[bi].visible=false;for(;ci<crates.length;ci++)crates[ci].visible=false;
     // 넋, 도깨비불, 짱뚱어
@@ -1543,6 +1692,11 @@ function init3D(){
     for(const g of skyBoats){const b=g.userData.b;g.position.x=b[0]+Math.sin(time*.05+b[2])*260;g.position.y=b[1]+Math.sin(time*.3+b[2]*2)*14;g.rotation.z=Math.sin(time*.4+b[2])*.05;}
     for(const g of airFish){const f=g.userData.f,ph=time*.5+f[2];g.position.set(f[0]+Math.cos(ph)*46,-(f[1]+Math.sin(ph*1.3)*14),-52+Math.sin(ph)*30);g.rotation.y=Math.atan2(Math.cos(ph)*30,-Math.sin(ph)*46);f[3].rotation.y=Math.sin(time*9+f[2])*.6;}
     for(const g of crabs){const c=g.userData.c,x=c[0]+Math.sin(time*.6+c[2])*16,near=Math.abs(p.x+7-x)<54&&!p.dead;c[3]+=((near?1:0)-c[3])*.12;g.position.set(x,-topAt(c[0])-c[3]*5,c[1]);g.visible=c[3]<.92;g.rotation.y=Math.sin(time*.6+c[2])>0?.3:-.3;}
+    RDYN.forEach((d,i)=>{const m=rdynM[i];m.visible=d.y<5000;if(m.visible)m.position.set(d.x+d.w/2,-(d.y+d.h/2),0);});
+    RCLIMB.forEach((c,i)=>rclM[i].position.set(c.x+c.w/2,-(c.y+c.h/2),c.net?4:2));
+    RROPE.forEach((q,i)=>{const a=q.pts();setSeg(rropeM[i],a[0],a[1],a[2],a[3],-6);});
+    RWHEEL.forEach((w,i)=>rwhM[i].rotation.z=w.ang());
+    hideLamp.position.x=RM.hide.lx;hideL.position.set(RM.hide.lx,-190,10);hideL.intensity=Math.abs(tx-RM.hide.lx)<900?2600:0;
     father.visible=state!=='epi'&&!finalEnd;fBoots.visible=father.visible&&dawn>.3;boots3.visible=AGE<2;
     // 2장
     {const n=net;netLad.visible=n.st==='stuck';netBag.visible=!netLad.visible;
