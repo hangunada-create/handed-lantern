@@ -542,6 +542,14 @@ function startWind(){
   const wf=ac.createBiquadFilter();wf.type='lowpass';wf.frequency.value=900;const wg=ac.createGain();wg.gain.value=.06;
   const lfo=ac.createOscillator();lfo.frequency.value=.11;const lg=ac.createGain();lg.gain.value=.05;lfo.connect(lg);lg.connect(wg.gain);lfo.start();
   w.connect(wf);wf.connect(wg);wg.connect(ac.destination);w.start(0,1.7);
+  // 숨소리: 잠든 아이의 고른 숨이 내내 낮게 깔린다 (들숨은 밝게, 날숨은 낮고 길게)
+  const b2=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),d2=b2.getChannelData(0);for(let i=0;i<d2.length;i++)d2[i]=Math.random()*2-1;
+  const bs=ac.createBufferSource();bs.buffer=b2;bs.loop=true;const bf=ac.createBiquadFilter();bf.type='bandpass';bf.Q.value=.9;bf.frequency.value=700;const bg=ac.createGain();bg.gain.value=0;
+  bs.connect(bf);bf.connect(bg);bg.connect(ac.destination);bs.start();
+  const cyc=4.6;let t0=ac.currentTime+1.5;const sched=()=>{while(t0<ac.currentTime+12){
+      bg.gain.setValueAtTime(.0001,t0);bg.gain.linearRampToValueAtTime(.05,t0+1.3);bg.gain.linearRampToValueAtTime(.004,t0+1.7);bg.gain.linearRampToValueAtTime(.036,t0+2.2);bg.gain.linearRampToValueAtTime(.0001,t0+4.1);
+      bf.frequency.setValueAtTime(620,t0);bf.frequency.linearRampToValueAtTime(1150,t0+1.4);bf.frequency.setValueAtTime(520,t0+1.75);bf.frequency.linearRampToValueAtTime(330,t0+4.1);t0+=cyc;}};
+  sched();setInterval(sched,5000);
 }
 function tone(f,dur,type,vol,slide,delay){if(!ac)return;const t=ac.currentTime+(delay||0),o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t+dur);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+dur+.05);}
 function noiseBurst(dur,vol){if(!ac)return;const b=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);const n=ac.createBufferSource();n.buffer=b;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=700;const g=ac.createGain();g.gain.value=vol;n.connect(f);f.connect(g);g.connect(ac.destination);n.start();}
@@ -764,7 +772,7 @@ function die(cause){
   sfx(cause);if(cause==='oyster')shake=Math.max(shake,.2);
 }
 /* 쓰러지면 잠깐 방 안이 스친다: 이불 속 아이가 뒤척이고, 다시 꿈으로 돌아간다 */
-function roomDur(){return deaths<=3?1.25:.7;}
+
 function hazards(){
   if(p.y>430)return die(waterAt(p.x+7)!==null?'drown':'fall');
 }
@@ -788,9 +796,8 @@ function tick(dt){
       if(lantern.held&&p.x+7>curEnd().x&&p.onGround){state='ending';endT=0;p.face=1;p.moving=false;p.held=null;sfx('end');}
       fade=Math.max(0,fade-dt*1.6);
     }else{
-      const was=deadT;deadT+=dt;fade=clamp((deadT-.45)/.5,0,1);
-      if(was<.95&&deadT>=.95)sfx('room');
-      if(deadT>1+roomDur())spawn();
+      deadT+=dt;fade=clamp((deadT-.45)/.5,0,1);
+      if(deadT>1.55)spawn();
     }
     if(state==='play'&&!p.dead){const tx=p.x+7-VW*.42;camX+=(tx-camX)*Math.min(1,dt*5);camX=clamp(camX,-180,WORLD_END-VW);}
   }else{
@@ -1147,7 +1154,7 @@ function renderTail(){
   const vg=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.32,W/2,H/2,Math.hypot(W,H)*.62);vg.addColorStop(0,'rgba(23,19,15,0)');vg.addColorStop(1,'rgba(10,20,24,.3)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
   if(OY>0){ctx.fillStyle=K;ctx.fillRect(0,0,W,OY+.5);ctx.fillRect(0,OY+WH*S-.5,W,H);}
   if(fade>0){ctx.fillStyle='rgba(23,19,15,'+fade+')';ctx.fillRect(0,0,W,H);}
-  if(state==='play'&&p.dead&&deadT>.95){const e=1+roomDur(),a=clamp((deadT-.95)/.15,0,1)*clamp((e-deadT)/.15,0,1);if(a>0)drawRoom(a,deadT-.95);ctx.setTransform(DPR,0,0,DPR,0,0);ctx.globalAlpha=1;}
+
 
   if(whiteT>0){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='rgba(244,236,216,'+whiteT+')';ctx.fillRect(0,0,W,H);}
   if(state==='epi'&&epiT<3.2){const a=clamp(epiT/.4,0,1)*clamp((3.2-epiT)/.5,0,1);if(a>0)drawRoom(a,9);ctx.setTransform(DPR,0,0,DPR,0,0);ctx.globalAlpha=1;}
@@ -1385,6 +1392,16 @@ function init3D(){
   {const tx=glowTex('160,185,220');for(const [px,w,o] of [[120,70,.07],[330,36,.055],[-120,26,.05],[520,50,.045],[-380,44,.04]]){const m=add(new T.PlaneGeometry(w,620),new T.MeshBasicMaterial({map:tx,transparent:true,opacity:o,blending:T.AdditiveBlending,depthWrite:false,fog:false,side:T.DoubleSide}),px,60,-430,cam,true);m.rotation.z=.62+Math.PI;}}
   for(let x=700;x<13200;x+=900+r()*900){const p=add(new T.BoxGeometry(3+r()*2.5,900,4),M.black,x,-200,330,null,true);p.rotation.z=(r()-.5)*.24;
     if(r()<.5){const L=160+r()*120;fixSeg(M.black,1.2,x,60,x+L*.5,96,330);fixSeg(M.black,1.2,x+L*.5,96,x+L,66,330);for(let k=1;k<4;k++)add(new T.SphereGeometry(2.6,6,5),M.black,x+L*k/4,-(74+Math.sin(k/4*Math.PI)*22),330,null,true);}}
+  // 갯벌에 박힌 방의 물건들: 장롱, 홀로 선 방문, 밥상
+  const wdk=mat(0x4a3526),paper=mat(0xe6dcc4),brass=mat(0xb8923a);
+  const topAt=x=>{let t=300;for(const st of statics)if(!st.hidden&&!st.prop&&st.h<700&&x>=st.x&&x<st.x+st.w&&st.y<t)t=st.y;return t;};
+  const mkWardrobe=(x,z,tilt,sink)=>{const g=new T.Group();box(48,72,26,wdk,0,36,0,g);for(const dx of [-12,12]){box(21,62,1.5,M.wood,dx,37,13.4,g);add(new T.SphereGeometry(1.6,6,5),brass,dx>0?dx-8:dx+8,38,15,g);}box(52,4,28,wdk,0,74,0,g);g.position.set(x,-topAt(x)-sink,z);g.rotation.z=tilt;g.rotation.y=.25;sc.add(g);return g;};
+  const mkDoor=(x,z,open)=>{const g=new T.Group();box(4,74,5,wdk,-17,37,0,g);box(4,74,5,wdk,17,37,0,g);box(38,4,5,wdk,0,75,0,g);const d=new T.Group();d.position.set(-15,0,0);box(30,70,1.6,paper,15,36,0,d);for(let i=1;i<6;i++)box(30,1,2.4,wdk,15,i*12,0,d);for(let i=1;i<3;i++)box(1,70,2.4,wdk,i*10,36,0,d);add(new T.TorusGeometry(2,.5,4,8),brass,26,34,1.6,d);d.rotation.y=-open;g.add(d);g.position.set(x,-topAt(x)+6,z);g.rotation.z=.05;sc.add(g);return g;};
+  const mkTable=(x,z)=>{const g=new T.Group();add(new T.CylinderGeometry(15,15,2,8),wdk,0,9,0,g);for(const [a,b] of [[-9,-7],[9,-7],[-9,7],[9,7]])box(2,9,2,wdk,a,4.5,b,g);add(new T.CylinderGeometry(3.4,2.2,3,8),paper,-4,11.5,2,g);add(new T.CylinderGeometry(2.6,1.8,2.4,8),paper,5,11.2,-3,g);g.position.set(x,-topAt(x)+3,z);g.rotation.z=-.16;sc.add(g);return g;};
+  mkWardrobe(770,-78,.32,30);mkDoor(1622,-66,.7);mkTable(2458,-70);mkWardrobe(3262,-84,-.22,38);mkDoor(5740,-70,.4);mkTable(7790,-64);mkWardrobe(9120,-80,.4,34);mkDoor(12210,-74,1);
+  // 꿈의 어긋남: 하늘에 떠 가는 배, 공중을 헤엄치는 짱뚱어
+  const skyBoats=[[1700,900,-2300],[6200,1050,-2700],[10400,950,-2500],[3900,1250,-3300]].map(([x,y,z],i)=>{const g=new T.Group();add(jit(new T.BoxGeometry(260,50,80,3,1,1),8),i%2?M.red:M.hull,0,0,0,g,true);add(new T.BoxGeometry(70,50,56),M.cabin,-30,50,0,g,true);add(new T.BoxGeometry(5,150,5),M.steel,30,100,0,g,true);g.position.set(x,y,z);g.userData.b=[x,y,i];sc.add(g);return g;});
+  const airFish=[];for(const [x,y] of [[980,150],[2240,120],[3560,170],[5300,90],[8700,150],[11500,170]])for(let i=0;i<4;i++){const g=new T.Group();add(new T.BoxGeometry(13,4.4,4),M.shell,0,0,0,g);const tl=box(6,3.4,1,M.shell,-9,0,0,g);add(new T.SphereGeometry(1.4,5,4),M.white,4.6,1.8,1.7,g);box(4,4,.8,M.hull,-1,3.6,0,g);g.userData.f=[x+i*34-50,y+(i%2)*26,i*1.7+x,tl];sc.add(g);airFish.push(g);}
   // 아이, 누운 몸, 상자, 등불, 넋, 도깨비불
   function mkChild(){const g=new T.Group(),o={g};
     o.legL=new T.Group();o.legL.position.set(-2,10,0);box(2.6,10,3,M.leg,0,-5,0,o.legL);g.add(o.legL);o.legR=new T.Group();o.legR.position.set(2,10,0);box(2.6,10,3,M.leg,0,-5,0,o.legR);g.add(o.legR);
@@ -1453,7 +1470,7 @@ function init3D(){
     const bg=C(C(0x1c3238,0x0a0f17,nk),0x86aab0,dawn).lerp(new T.Color(0xcfd6dc),flash*.6);sc.background=bg;sc.fog.color.copy(bg);sc.fog.density=.00034+.00022*storm;
     amb.color.copy(C(C(0x4a5c78,0x33445f,nk),0xc8c0b0,dawn));amb.intensity=(1.9-.5*nk)*(1+.9*dawn)+flash*2.5;
     moon.color.copy(C(0x9fb8e0,0xffd9a0,dawn));moon.intensity=2.6-.5*nk+1.2*dawn-.8*storm;moon.position.set(tx+420,620,460);moon.target.position.set(tx,-250,0);
-    stars.material.opacity=(.3+.6*nk)*(1-dawn)*(1-storm*.8);moonM.position.set(tx+1500,1150,-7000);moonM.material.opacity=clamp((nk-.25)*2.5,0,1)*(1-dawn)*(1-storm);
+    stars.material.opacity=(.3+.6*nk)*(1-dawn)*(1-storm*.8);moonM.position.set(tx+1500,800,-7000);moonM.material.opacity=clamp((nk-.25)*2.5,0,1)*(1-dawn)*(1-storm);
     sunM.position.set(tx+1900,-250-nk*700+dawn*0,-7400);sunM.material.opacity=1-dawn;sunM.visible=nk<.9;
     duskG.position.x=dawnG.position.x=tx;duskG.material.opacity=(.5-.3*nk)*(1-dawn);dawnG.material.opacity=dawn;
     // 물
@@ -1478,6 +1495,8 @@ function init3D(){
     fish.amb.forEach((f,i)=>{const m=fishM[i];m.visible=f.st==='sit';m.position.x=f.x;m.position.y=-300+(f.hop>0?3:0);});
     {const holes=MUDS[2].holes,m=fishM[4];m.visible=fish.chain<holes.length&&fish.st==='sit';if(m.visible){m.position.x=holes[fish.chain]-1;m.position.y=-300.6;}}
     FARKIDS.forEach((k,i)=>{const x=farKidX(k)/.456;farKids[i].position.set(x,-295,-800);farKids[i].rotation.z=Math.sin(time*5+i)*.06;});
+    for(const g of skyBoats){const b=g.userData.b;g.position.x=b[0]+Math.sin(time*.05+b[2])*260;g.position.y=b[1]+Math.sin(time*.3+b[2]*2)*14;g.rotation.z=Math.sin(time*.4+b[2])*.05;}
+    for(const g of airFish){const f=g.userData.f,ph=time*.5+f[2];g.position.set(f[0]+Math.cos(ph)*46,-(f[1]+Math.sin(ph*1.3)*14),-52+Math.sin(ph)*30);g.rotation.y=Math.atan2(Math.cos(ph)*30,-Math.sin(ph)*46);f[3].rotation.y=Math.sin(time*9+f[2])*.6;}
     father.visible=state!=='epi'&&!finalEnd;fBoots.visible=father.visible&&dawn>.3;boots3.visible=AGE<2;
     // 2장
     {const n=net;netLad.visible=n.st==='stuck';netBag.visible=!netLad.visible;
