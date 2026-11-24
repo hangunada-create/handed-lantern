@@ -128,9 +128,9 @@ const SEA_X=4160;                              // 갓바위 너머 밤바다
 const FATHER={x:190};                          // 그물을 덮어쓴 몸
 const BUOY={x:1905};                           // 아버지 배의 표식이 새겨진 부표
 const GATBAWI=[{x:4230,h:74,w:26,tilt:0},{x:4290,h:52,w:20,tilt:.35}]; // 아버지 바위, 아들 바위
-const checkpoints=[{x:30,y:300},{x:940,y:300},{x:1250,y:300},{x:1570,y:300},{x:2050,y:300},{x:2500,y:300},{x:3210,y:300},{x:3492,y:300},{x:3612,y:258},
+const checkpoints=[{x:30,y:300},{x:940,y:300},{x:1250,y:300},{x:1556,y:300},{x:2050,y:300},{x:2500,y:300},{x:3210,y:300},{x:3492,y:300},{x:3612,y:258},
   {x:4730,y:300},{x:5120,y:210},{x:5560,y:140},{x:5940,y:140},{x:6703,y:250},{x:6840,y:150},
-  {x:7720,y:210},{x:8150,y:250},{x:8540,y:250},{x:8960,y:250}, {x:9620,y:250},{x:9984,y:250},{x:10520,y:250},{x:11110,y:262}, {x:11930,y:250},{x:12310,y:178},{x:12408,y:60}];
+  {x:7720,y:210},{x:8150,y:250},{x:8540,y:250},{x:8960,y:250}, {x:9620,y:250},{x:9984,y:250},{x:10506,y:250},{x:11110,y:262}, {x:11930,y:250},{x:12310,y:178},{x:12408,y:60}];
 const DOORS=[{ax:12244,ay:250,bx:12332,by:178}];   // 꿈의 문: 들어가면 다른 문으로 나온다. 상자와 몸도 지나간다
 /* ===== 꿈의 방: 길을 막은 바위 앞의 문으로 들어가면 다른 곳의 문으로 나온다. 방마다 퍼즐 하나 (design/puzzles.md) ===== */
 checkpoints.forEach((c,i)=>c.ord=i);
@@ -150,7 +150,7 @@ function mkRoom(id,O,ord,m,r){   // m: 본길 {blockX,blockY,blockW,ax,bx,y}, r:
 }
 const O1=14000,O2=15000,O3=16000,O4=17000,O5=18000,O6=19000,O7=20000,O8=21000,O9=22000;
 // 1 뻘배 (1장, 넓은 펄 다음)
-{const r=mkRoom('sled',O1,3,{blockX:1622,blockY:150,ax:1596,bx:1662,y:300,lo:4},{inY:300,outX:O1+740,outY:300});
+{const r=mkRoom('sled',O1,3,{blockX:1616,blockY:150,ax:1580,bx:1662,y:300,lo:4},{inY:300,outX:O1+740,outY:300});
  statics.push({x:O1-60,y:300,w:180,h:200},{x:O1+120,y:324,w:400,h:200},{x:O1+520,y:300,w:300,h:200});MUDS.push({x:O1+120,w:400,rate:14,stakes:[]});
  r.init=r.reset=()=>{objs=objs.filter(o=>!(o.type==='sled'&&inRoom(o,r)));objs.push({type:'sled',x:O1+72,y:294,w:34,h:6,vy:0,vx:0,sink:0,wt:1});};}
 // 2 갯골 마개 (1장, 밀물 물골 앞)
@@ -160,31 +160,31 @@ const O1=14000,O2=15000,O3=16000,O4=17000,O5=18000,O6=19000,O7=20000,O8=21000,O9
  r.init=()=>{RM.plug.lv=382;RM.plug.ch=316;r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:"crate",x:O2+298,y:372,w:92,h:8,vy:0,wt:1});};}
 function plugged(){return objs.some(o=>o.type==='body'&&!o.ghost&&o.x+14>O2+146&&o.x+14<O2+186&&o.y>280);}
 // 3 등불을 줄로 끌어올리기 (2장, 고풀이 앞)
-{const r=mkRoom('hoist',O3,11,{blockX:5700,blockY:-20,ax:5676,bx:5742,y:140},{inY:300,outX:O3+740,outY:160,need:true});
+{const r=mkRoom('hoist',O3,11,{blockX:5696,blockY:-20,ax:5650,bx:5756,y:140},{inY:300,outX:O3+740,outY:160,need:true});
  statics.push({x:O3-60,y:300,w:362,h:200},{x:O3+302,y:160,w:518,h:340,rock:true});
  RM.hoist={b:{x:O3+244,y:297,w:58,h:4,mat:'wood'}};RDYN.push(RM.hoist.b);RCLIMB.push({x:O3+284,y:146,w:18,h:154,rope:true});
  RROPE.push({pts:()=>[O3+330,150,O3+273,128]},{pts:()=>[O3+273,128,O3+273,RM.hoist.b.y]});RDECO.push({x:O3+327,y:126,w:6,h:34,z:-6,d:6,mat:'wood'},{x:O3+268,y:124,w:64,h:4,z:-6,d:5,mat:'wood'});
  r.init=r.reset=()=>{if(!(onTop(lantern,RM.hoist.b)&&RM.hoist.b.y<290))RM.hoist.b.y=297;};}
 // 4 얇은 널 (2장, 소년이 된 뒤 큰 배 위)
-{const r=mkRoom('plank',O4,14,{blockX:7000,blockY:-10,ax:6976,bx:7042,y:150},{inY:250,outX:O4+740,outY:250});
+{const r=mkRoom('plank',O4,14,{blockX:6985,blockY:-10,ax:6940,bx:7040,y:150},{inY:250,outX:O4+740,outY:250});
  statics.push({x:O4-60,y:250,w:260,h:300,rock:true},{x:O4+330,y:250,w:490,h:300,rock:true});RWZ.push({x:O4+200,x2:O4+330,lv:()=>268});
  RM.plank={b:{x:O4+197,y:246,w:136,h:4,mat:'wood'},t:0,broken:false};RDYN.push(RM.plank.b);
  r.init=()=>{RM.plank.b.y=246;RM.plank.t=0;RM.plank.broken=false;};r.reset=()=>{};}
 // 5 물 옮기기 (3장, 수문 다음)
-{const r=mkRoom('swap',O5,17,{blockX:8640,blockY:90,ax:8616,bx:8682,y:250},{inY:250,outX:O5+740,outY:178});
+{const r=mkRoom('swap',O5,17,{blockX:8636,blockY:90,ax:8590,bx:8696,y:250},{inY:250,outX:O5+740,outY:178});
  statics.push({x:O5-60,y:250,w:210,h:300,rock:true},{x:O5+150,y:300,w:100,h:250,rock:true},{x:O5+250,y:250,w:80,h:300,rock:true},{x:O5+330,y:300,w:100,h:250,rock:true},{x:O5+430,y:250,w:130,h:300,rock:true},{x:O5+560,y:178,w:260,h:372,rock:true});
  RM.swap={s:0,L:{x:O5+151,y:294,w:98,h:6,mat:'wood'},R:{x:O5+331,y:250,w:98,h:6,mat:'wood'},w1:O5+76,w2:O5+290};RDYN.push(RM.swap.L,RM.swap.R);
  RWZ.push({x:O5+150,x2:O5+250,lv:()=>RM.swap.s>.04?RM.swap.L.y+3:null},{x:O5+330,x2:O5+430,lv:()=>RM.swap.s<.96?RM.swap.R.y+3:null});
  RWHEEL.push({x:RM.swap.w1,y:232,ang:()=>RM.swap.s*9},{x:RM.swap.w2,y:232,ang:()=>-RM.swap.s*9});
  r.init=()=>{RM.swap.s=0;objs=objs.filter(o=>!(o.type==='crate'&&inRoom(o,r)));r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:'crate',x:O5+112,y:232,w:18,h:18,vy:0,wt:1});};}
 // 6 차오르는 방조제 (3장의 시험, 장화 앞)
-{const r=mkRoom('rise',O6,18,{blockX:9100,blockY:90,ax:9076,bx:9142,y:250},{inY:300,outX:O6+740,outY:150});
+{const r=mkRoom('rise',O6,18,{blockX:9074,blockY:90,ax:9030,bx:9118,y:250},{inY:300,outX:O6+740,outY:150});
  statics.push({x:O6-60,y:300,w:280,h:250,rock:true},{x:O6+220,y:225,w:220,h:325,rock:true},{x:O6+440,y:150,w:380,h:400,rock:true});
  RM.rise={t:0};RWZ.push({x:O6-60,x2:O6+820,lv:()=>{const l=riseLv();return l<300?l:null;}});
  r.init=r.reset=r.enter=()=>{RM.rise.t=0;for(const o of objs)if(o.type==='body'&&!o.ghost&&inRoom(o,r)&&o.y<280&&o.x<O6+440){o.x=Math.min(o.x,O6+190);o.y=284;o.vy=0;}};}   // 물이 빠지면 뜬 몸은 첫 바닥으로 내려와 있다
 function riseLv(){return 232+100*Math.cos(RM.rise.t/24*Math.PI*2);}
 // 7 기우는 배 (4장, 갑판 위 조타실 문)
-{const r=mkRoom('tilt',O7,19,{blockX:9784,blockY:90,blockW:12,ax:9760,bx:9818,y:250,boat:true},{inY:250,outX:O7+110,outY:95});
+{const r=mkRoom('tilt',O7,19,{blockX:9760,blockY:90,blockW:12,ax:9716,bx:9804,y:250,boat:true},{inY:250,outX:O7+110,outY:95});
  statics.push({x:O7-60,y:250,w:260,h:300,rock:true});RWZ.push({x:O7+200,x2:O7+820,lv:()=>292});
  RM.tilt={th:-1,segs:[],mid:O7+380};for(let i=0;i<18;i++){const s={x:O7+200+i*20,y:250,w:20,h:6,mat:'hull',noObj:true,pos:(i*20+10-180)/180};RM.tilt.segs.push(s);RDYN.push(s);}
  RDYN.push({x:O7+560,y:176,w:6,h:110,mat:'wood'},{x:O7+60,y:95,w:144,h:8,mat:'wood'});RDECO.push({x:O7+484,y:240,w:3,h:8,z:0,d:60,mat:'wood'});RCLIMB.push({x:O7+208,y:60,w:13,h:90,net:true});
@@ -192,26 +192,26 @@ function riseLv(){return 232+100*Math.cos(RM.rise.t/24*Math.PI*2);}
  r.init=()=>{RM.tilt.th=-1;objs=objs.filter(o=>!(o.type==='crate'&&inRoom(o,r)));for(const x of [232,274])objs.push({type:'crate',x:O7+x,y:230,w:22,h:20,vy:0,wt:2});};r.reset=()=>{};}
 function tiltY(x){const t=RM.tilt;return 250+t.th*30*clamp((x-t.mid)/180,-1,1);}
 // 8 하늘의 닻줄 (4장, 뱃머리)
-{const r=mkRoom('anchor',O8,20,{blockX:10040,blockY:90,blockW:12,ax:10016,bx:10074,y:250,boat:true,lo:6},{inY:250,outX:O8+740,outY:250});
+{const r=mkRoom('anchor',O8,20,{blockX:10044,blockY:90,blockW:12,ax:10004,bx:10084,y:250,boat:true,lo:6},{inY:250,outX:O8+740,outY:250});
  statics.push({x:O8-60,y:250,w:310,h:14,prop:true},{x:O8+550,y:250,w:270,h:14,prop:true});RDECO.push({x:O8-60,y:250,w:310,h:44,z:0,d:64,mat:'hull'},{x:O8+550,y:250,w:270,h:44,z:0,d:64,mat:'hull'});
  RWZ.push({x:O8-60,x2:O8+820,lv:()=>268});RM.anchor={t:0,c:{x:O8+394,y:104,w:12,h:132,dx:0,vx:0,chain:true}};RCLIMB.push(RM.anchor.c);
  r.init=()=>{RM.anchor.t=0;};r.reset=()=>{};}
 // 9 장롱에 숨기 (4장, 부서진 선체 들머리)
-{const r=mkRoom('hide',O9,21,{blockX:10562,blockY:90,blockW:12,ax:10540,bx:10592,y:250,boat:true,lo:4},{inY:250,outX:O9+740,outY:250});
+{const r=mkRoom('hide',O9,21,{blockX:10566,blockY:90,blockW:12,ax:10528,bx:10602,y:250,boat:true,lo:4},{inY:250,outX:O9+740,outY:250});
  statics.push({x:O9-60,y:250,w:880,h:14,prop:true});RDECO.push({x:O9-60,y:250,w:880,h:44,z:0,d:64,mat:'hull'});RWZ.push({x:O9-60,x2:O9+820,lv:()=>268});
  RM.hide={t:0,lx:O9+380,ws:[O9+300,O9+450],gt:0};r.init=()=>{RM.hide.t=0;RM.hide.gt=0;};r.reset=()=>{};}
 /* ===== 꿈의 방 10~14 (2026-11-24): 파도를 빌리기, 폭풍 한가운데, 떼배 무게 맞추기, 등불 떠내려 보내기, 줄 걸기 ===== */
 const O10=23000,O11=24000,O12=25000,O13=26000,O14=27000,RWAVE=[];
 function rwaveAt(x,f){if(f>225)for(const z of RWAVE)if(x>z.x&&x<z.x2)return z;return null;}
 // 10 파도를 빌리기 (4장, 갑판): 위 갑판으로 들어와 오른쪽 끝에서 내려서고, 물에 뜬 상자에 서서 파도에 실려 왼쪽 아래 문으로 간다
-{const r=mkRoom('surge',O10,19,{blockX:9900,blockY:90,blockW:12,ax:9876,bx:9936,y:250,boat:true,lo:6,f:[.7,.9]},{inY:170,outX:O10+110,outY:250});
+{const r=mkRoom('surge',O10,19,{blockX:9900,blockY:90,blockW:12,ax:9856,bx:9944,y:250,boat:true,lo:6,f:[.7,.9]},{inY:170,outX:O10+110,outY:250});
  statics.push({x:O10-60,y:170,w:680,h:10,prop:true},{x:O10-60,y:250,w:260,h:14,prop:true},{x:O10+560,y:250,w:260,h:14,prop:true});
  RDECO.push({x:O10-60,y:170,w:680,h:10,z:0,d:64,mat:'hull'},{x:O10-60,y:250,w:260,h:44,z:0,d:64,mat:'hull'},{x:O10+560,y:250,w:260,h:44,z:0,d:64,mat:'hull'},{x:O10+638,y:208,w:5,h:42,z:-6,d:5,mat:'wood'});
  for(const x of [196,400,612])RDECO.push({x:O10+x,y:180,w:5,h:x===400?120:70,z:-26,d:5,mat:'wood'});
  RWZ.push({x:O10-60,x2:O10+820,lv:()=>268});RWAVE.push({x:O10+200,x2:O10+830,holds:[O10+640]});
  r.init=()=>{objs=objs.filter(o=>!(o.type==='crate'&&inRoom(o,r)));objs.push({type:'crate',x:O10+516,y:259,w:44,h:16,vy:0,wt:1});};r.reset=()=>{};}
 // 11 폭풍 한가운데 (4장의 시험, 흰 천의 길 앞): 번개의 틈에 불빛 밑을 지나고, 버티고, 두 번 파도에 실려 간다
-{const r=mkRoom('storm',O11,22,{blockX:11180,blockY:100,ax:11150,bx:11216,y:262,lo:6},{inY:170,outX:O11+110,outY:250});
+{const r=mkRoom('storm',O11,22,{blockX:11186,blockY:100,ax:11140,bx:11236,y:262,lo:6},{inY:170,outX:O11+110,outY:250});
  statics.push({x:O11-60,y:170,w:680,h:10,prop:true},{x:O11-60,y:250,w:260,h:14,prop:true},{x:O11+380,y:250,w:60,h:14,prop:true},{x:O11+620,y:250,w:200,h:14,prop:true});
  RDECO.push({x:O11-60,y:170,w:680,h:10,z:0,d:64,mat:'hull'},{x:O11-60,y:250,w:260,h:44,z:0,d:64,mat:'hull'},{x:O11+380,y:250,w:60,h:44,z:0,d:64,mat:'hull'},{x:O11+620,y:250,w:200,h:44,z:0,d:64,mat:'hull'},
    {x:O11+408,y:208,w:5,h:42,z:-6,d:5,mat:'wood'},{x:O11+698,y:208,w:5,h:42,z:-6,d:5,mat:'wood'});
@@ -220,7 +220,7 @@ function rwaveAt(x,f){if(f>225)for(const z of RWAVE)if(x>z.x&&x<z.x2)return z;re
  RM.storm={gt:0,L:[{x:O11+330,r:75,up:true,y:112},{x:O11+290,r:40,up:false,y:198}]};
  r.init=()=>{RM.storm.gt=0;objs=objs.filter(o=>!(o.type==='crate'&&inRoom(o,r)));for(const x of [576,336])objs.push({type:'crate',x:O11+x,y:259,w:44,h:16,vy:0,wt:1});};r.reset=()=>{};}
 // 12 떼배 무게 맞추기 (2장, 소년이 된 뒤 큰 배 위): 어구 상자를 실어 깊이 잠겨야 뱃머리 밑을 지나고, 상자를 버려 떠올라야 모래톱을 넘는다
-{const r=mkRoom('ferry',O12,14,{blockX:7140,blockY:-10,ax:7116,bx:7176,y:150,f:[.7,.9]},{inY:250,outX:O12+740,outY:250});
+{const r=mkRoom('ferry',O12,14,{blockX:7170,blockY:-10,ax:7120,bx:7226,y:150,f:[.7,.9]},{inY:250,outX:O12+740,outY:250});
  statics.push({x:O12-60,y:250,w:220,h:300,rock:true},{x:O12+640,y:250,w:180,h:300,rock:true},{x:O12+470,y:272,w:70,h:280,rock:true},{x:O12+300,y:-300,w:40,h:538,hidden:true});
  RDECO.push({x:O12+260,y:-80,w:120,h:290,z:0,d:150,mat:'hull'},{x:O12+300,y:210,w:40,h:28,z:0,d:120,mat:'hull'},{x:O12+146,y:232,w:4,h:18,z:-6,d:4,mat:'wood'},{x:O12+650,y:232,w:4,h:18,z:-6,d:4,mat:'wood'});
  RWZ.push({x:O12+160,x2:O12+640,lv:()=>268});
@@ -229,7 +229,7 @@ function rwaveAt(x,f){if(f>225)for(const z of RWAVE)if(x>z.x&&x<z.x2)return z;re
  const mk=()=>{const sp={x:O12+80,y:230,w:22,h:20};if(!objs.some(o=>o.type==='crate'&&!o.ghost&&inRoom(o,r))&&!objs.some(o=>!o.ghost&&overlap(o,sp))&&!(p&&overlap(p,sp)))objs.push({type:'crate',x:sp.x,y:sp.y,w:22,h:20,vy:0,wt:2,sinks:true});};
  RM.ferry.mk=mk;r.init=()=>{RM.ferry.r.x=O12+162;RM.ferry.r.y=252;objs=objs.filter(o=>!(o.type==='crate'&&inRoom(o,r)));mk();};r.reset=mk;}
 // 13 등불 떠내려 보내기 (3장, 장화 앞): 널 위에 등불을 두고 매인 줄을 풀면 물살이 건너편 그물까지 실어 간다. 나는 줄에 매달려 건넌다
-{const r=mkRoom('drift',O13,18,{blockX:9210,blockY:90,ax:9190,bx:9246,y:250,lo:30,f:[.7,.9]},{inY:250,outX:O13+740,outY:250,need:true});
+{const r=mkRoom('drift',O13,18,{blockX:9214,blockY:90,ax:9170,bx:9262,y:250,lo:30,f:[.7,.9]},{inY:250,outX:O13+740,outY:250,need:true});
  statics.push({x:O13-60,y:250,w:260,h:300,rock:true},{x:O13+560,y:250,w:260,h:300,rock:true});RWZ.push({x:O13+200,x2:O13+560,lv:()=>268});
  RM.drift={b:{x:O13+204,y:262,w:40,h:6,mat:'wood'},st:'dock',t:0,latch:false,sink:0};RDYN.push(RM.drift.b);
  RCLIMB.push({x:O13+150,y:190,w:444,h:12,hz:true});
@@ -237,7 +237,7 @@ function rwaveAt(x,f){if(f>225)for(const z of RWAVE)if(x>z.x&&x<z.x2)return z;re
  RDECO.push({x:O13+148,y:188,w:5,h:62,z:-6,d:5,mat:'wood'},{x:O13+592,y:188,w:5,h:62,z:-6,d:5,mat:'wood'},{x:O13+174,y:230,w:4,h:20,z:-6,d:4,mat:'wood'},{x:O13+554,y:236,w:4,h:70,z:-22,d:4,mat:'wood'},{x:O13+554,y:236,w:4,h:70,z:22,d:4,mat:'wood'});
  r.init=()=>{const q=RM.drift;q.b.x=O13+204;q.b.y=262;q.st='dock';q.t=0;q.sink=0;q.latch=false;};r.reset=()=>{if(lantern.held||!onTop(lantern,RM.drift.b))r.init();};}
 // 14 줄 걸기 (2장, 선창): 늘어진 줄 끝을 잡고 말뚝을 지나가면 걸린다. 먼 말뚝에 걸어야 팽팽해져 매달려 건널 수 있다
-{const r=mkRoom('rope',O14,9,{blockX:4900,blockY:150,ax:4876,bx:4936,y:300},{inY:300,outX:O14+740,outY:270});
+{const r=mkRoom('rope',O14,9,{blockX:4890,blockY:150,ax:4840,bx:4946,y:300},{inY:300,outX:O14+740,outY:270});
  statics.push({x:O14-60,y:200,w:50,h:300,rock:true},{x:O14-10,y:250,w:22,h:300,rock:true},{x:O14-60,y:300,w:390,h:200},{x:O14+330,y:324,w:270,h:200},{x:O14+600,y:270,w:220,h:400,rock:true});MUDS.push({x:O14+330,w:270,rate:25,stakes:[],deep:true});
  const TP=[O14+606,231],PS=[{x:O14+250,gy:300,ty:267},{x:O14-35,gy:200,ty:167}];
  RM.rope={held:false,hook:0,ex:O14+300,ey:298,clear:0,wait:false,TP,PS,L:Math.hypot(TP[0]-PS[1].x,TP[1]-(PS[1].gy-14))+3,segs:[]};
