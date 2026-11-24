@@ -428,9 +428,9 @@ function ch2Tick(dt){
   {const wa=cradleW(crA),wb=cradleW(crB);
    const riding=alive&&(onTop(p,crA)||onTop(p,crB));   // 사람이 타야 도르래가 풀린다. 아무도 없으면 둘 다 내려온다
    for(const [c,up] of [[crA,riding&&wb>wa],[crB,riding&&wa>wb]]){const d=clamp((up?CR_HIGH:CR_LOW)-c.y,-40*dt,40*dt);if(!d)continue;
-     if(d<0){for(const o of objs)if(!o.ghost&&onTop(o,c))o.y+=d;if(alive&&onTop(p,c))p.y+=d;}c.y+=d;}
+     for(const o of objs)if(!o.ghost&&onTop(o,c))o.y+=d;if(alive&&p.onGround&&onTop(p,c))p.y+=d;c.y+=d;}   // 오르든 내리든 그물 위의 것은 그물과 함께 움직인다(전에는 내려갈 때 통통 떨어졌다)
    // 나 그물에 오래 서 있으면 그물이 오므라든다
-   if(alive&&p.onGround&&onTop(p,crB)&&p.x+7>=crB.x+4&&p.x+7<crB.x+crB.w-4){cargoT+=dt;if(cargoT>1.2){cargoT=0;die('cargo');}}else cargoT=Math.max(0,cargoT-dt*2);}
+   if(alive&&p.onGround&&onTop(p,crB)&&p.x+7>=crB.x+4&&p.x+7<crB.x+crB.w-4){if(cargoT<=.25&&cargoT+dt>.25)sfx('knot');cargoT+=dt;if(cargoT>1.7){cargoT=0;die('cargo');}}else cargoT=Math.max(0,cargoT-dt*2);}
 }
 /* 줄: 고풀이 매듭을 당겨 풀기, 줄에 매달리기, 그물 타기, 부표 줄 당기기. 무엇인가 했으면 true */
 function ch2Step(dt,L,R,G,dir){
@@ -1026,7 +1026,7 @@ function die(cause){
     if(b.x+b.w>GATE.x&&b.x<GATE.x+GATE.w&&b.y>150)b.x=p.x+7<GATE.x+6?GATE.x-b.w:GATE.x+GATE.w;
     objs.push(b);
   }
-  if(cause==='cargo'){const b=objs[objs.length-1];b.x=crB.x+12;b.y=crB.y-14;b.keep=true;}
+  if(cause==='cargo'){const b=objs[objs.length-1];b.x=crB.x+12;b.y=crB.y-14;b.keep=true;b.cargo=true;}
   if(cause==='rope'){knot.done=true;knot.n=7;raft.free=true;pendingAge=Math.max(pendingAge,1);objs.push({type:'body',ghost:true,x:KEDGE-6,y:HARBOR_WL-6,w:28,h:14,vy:0,face:-1,wt:WT[AGE]});}
   if(cause==='deep'){for(let i=0;i<8;i++)bubbles.push({x:p.x+7+(Math.random()-.5)*14,y:MUD_TOP+2+Math.random()*6,l:.6+Math.random(),mud:true});}
   if(lantern.held){
@@ -1768,6 +1768,7 @@ function init3D(){
   const raftM=box(90,6,36,M.wood,0,0,0);for(let i=0;i<5;i++)box(12,6,30,M.wood,-36+i*18,-5,0,raftM);
   fixSeg(M.white,1.3,KEDGE,150,6030,232,-5);fixSeg(M.white,1.3,6030,232,6712,232,-5);for(let x=6070;x<6700;x+=90)add(new T.SphereGeometry(4,6,5),M.orange,x,-235,-5);fixSeg(M.wood,3,6712,250,6712,226,-16);const pullLine=seg(M.dark,.9);
   fixSeg(M.wood,4.4,6838,150,6838,85,-14);fixSeg(M.wood,4.4,6838,86,6742,86,-14);
+  const cargoBag=add(new T.SphereGeometry(1,8,6),M.net,0,0,0,null,true);cargoBag.visible=false;
   const cr=[crA,crB].map(()=>({m:box(1,4,30,M.wood,0,0,0),l:seg(M.dark,.9),a:seg(M.dark,.7),b:seg(M.dark,.7)}));
   // 3장: 수문, 정치망
   gbox(GATE.x-3,84,GATE.w+6,10,0,44,M.steel);gbox(GATE.x-3,92,3,208,22,3,M.steel);gbox(GATE.x+GATE.w,92,3,208,22,3,M.steel);
@@ -1865,6 +1866,8 @@ function init3D(){
      if(p.hang&&!p.dead)setSeg(ropeB,KEDGE,140,p.x+5,p.y+5,-2);else if(knot.done)setSeg(ropeB,KEDGE+1,141,KEDGE+4,HARBOR_WL-2,-2);else setSeg(ropeB,KEDGE+1,141,KEDGE+2,143,-2);
      ropeC.visible=ropeD.visible=!knot.done;if(!knot.done){setSeg(ropeC,KEDGE+1,141,KFAR.x,KFAR.y,-3);setSeg(ropeD,KFAR.x,KFAR.y,raft.x+88,raft.y+1,-3);}
      raftM.position.set(raft.x+45,-(raft.y+3),0);pullLine.visible=p.ropePull&&!p.dead&&!onTop(p,raft);if(pullLine.visible)setSeg(pullLine,p.x+7,p.y+8,p.x+2,233,-6);
+     {const k=clamp(cargoT/1.7,0,1),bd=objs.find(o=>o.cargo&&!o.ghost&&o.y<700);cargoBag.visible=(k>.03&&!p.dead)||!!bd;   // 나 그물에 서 있으면 그물 자락이 발밑에서부터 오므라들어 몸을 감싼다
+      if(k>.03&&!p.dead){cargoBag.position.set(p.x+7,-(crB.y-2-15*k),2);cargoBag.scale.set(24-9*k,2+15*k,16-3*k);}else if(bd){cargoBag.position.set(bd.x+14,-(bd.y+6),2);cargoBag.scale.set(19,9,13);}}
      [crA,crB].forEach((c,i)=>{const q=cr[i],mx=c.x+c.w/2;q.m.scale.x=c.w;q.m.position.set(mx,-(c.y+2),0);setSeg(q.l,mx,87,mx,c.y-34,0);setSeg(q.a,mx,c.y-34,c.x+1,c.y,0);setSeg(q.b,mx,c.y-34,c.x+c.w-1,c.y,0);});}
     // 3장, 4장, 5장
     gateM.position.y=-(gate.y+70);wheelM.rotation.z=(gate.y-GATE.closed)*.09;
