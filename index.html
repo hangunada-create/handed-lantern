@@ -163,7 +163,7 @@ function plugged(){return objs.some(o=>o.type==='body'&&!o.ghost&&o.x+14>O2+146&
 {const r=mkRoom('hoist',O3,11,{blockX:5696,blockY:-20,ax:5650,bx:5756,y:140},{inY:300,outX:O3+740,outY:160,need:true});
  statics.push({x:O3-60,y:300,w:362,h:200},{x:O3+302,y:160,w:518,h:340,rock:true});
  RM.hoist={b:{x:O3+244,y:297,w:58,h:4,mat:'wood'}};RDYN.push(RM.hoist.b);RCLIMB.push({x:O3+284,y:146,w:18,h:154,rope:true});
- RROPE.push({pts:()=>[O3+330,150,O3+273,128]},{pts:()=>[O3+273,128,O3+273,RM.hoist.b.y]});RDECO.push({x:O3+327,y:126,w:6,h:34,z:-6,d:6,mat:'wood'},{x:O3+268,y:124,w:64,h:4,z:-6,d:5,mat:'wood'});
+ RROPE.push({pts:()=>p&&p.hoist?[p.x+2,p.y+13+Math.sin((p.hoistT||0)*6.2)*3,O3+279,128]:[O3+330,150,O3+279,128]},{pts:()=>[O3+268,128,O3+268,RM.hoist.b.y]});RDECO.push({x:O3+327,y:126,w:6,h:34,z:-6,d:6,mat:'wood'},{x:O3+268,y:124,w:64,h:4,z:-6,d:5,mat:'wood'});
  r.init=r.reset=()=>{if(!(onTop(lantern,RM.hoist.b)&&RM.hoist.b.y<290))RM.hoist.b.y=297;};}
 // 4 얇은 널 (2장, 소년이 된 뒤 큰 배 위)
 {const r=mkRoom('plank',O4,14,{blockX:6985,blockY:-10,ax:6940,bx:7040,y:150},{inY:250,outX:O4+740,outY:250});
@@ -264,7 +264,7 @@ function roomsTick(dt){
   {const q=RM.plug,pl=plugged();q.ch=pl?Math.max(301,q.ch-45*dt):Math.min(316,q.ch+45*dt);if(!pl&&state==='play'&&!p.dead&&p.x+7>O2+150&&p.x+7<O2+182&&p.y+p.h>321)die('drown');q.lv=pl&&q.ch<302.5?Math.max(301,q.lv-45*dt):Math.min(382,q.lv+30*dt);
    for(const o of objs)if(o.type==='body'&&!o.ghost&&o.x+14>O2+146&&o.x+14<O2+186&&o.y>280){o.keep=true;o.nofloat=true;}}   // 물길을 막고 있는 몸은 날아가지 않는다
   // 등불 바구니: 위에서 줄을 당기면 올라온다
-  {const b=RM.hoist.b,up=alive&&p.hoist;let d=0;if(up)d=Math.max(160-b.y,-55*dt);else if(b.y>160.5&&b.y<297)d=Math.min(297-b.y,30*dt);
+  {const b=RM.hoist.b,up=alive&&p.hoist;let d=0;if(up){const t0=p.hoistT||0;p.hoistT=t0+dt;const k=Math.max(0,Math.sin(p.hoistT*6.2));if(b.y>160&&Math.floor(p.hoistT*6.2/(2*Math.PI))!==Math.floor(t0*6.2/(2*Math.PI)))sfx('knot');d=Math.max(160-b.y,-(8+150*k*k)*dt);}else if(b.y>160.5&&b.y<297)d=Math.min(297-b.y,30*dt);
    if(d){if(!lantern.held&&onTop(lantern,b))lantern.y+=d;for(const o of objs)if(!o.ghost&&onTop(o,b))o.y+=d;if(alive&&onTop(p,b))p.y+=d;b.y+=d;}}
   // 얇은 널: 소년의 무게를 못 견디고 부러진다
   {const q=RM.plank;if(!q.broken){if(alive&&onTop(p,q.b)&&WT[AGE]>=2&&p.x+7>O4+240&&p.x+7<O4+300){q.t+=dt;if(q.t>.18){q.broken=true;sfx('land');shake=Math.max(shake,.15);}}else q.t=0;}else if(q.b.y<8000){q.b.y+=260*dt;if(q.b.y>420)q.b.y=9000;}}
@@ -1699,6 +1699,7 @@ function init3D(){
   const plugV=new T.Group();{const wm=new T.MeshBasicMaterial({color:0x8fd0d2,transparent:true,opacity:.78});const pour=add(new T.BoxGeometry(30,130,2.4),wm,O2+166,0,60.4,plugV,true);const st=[];for(let i=0;i<6;i++)st.push(add(new T.BoxGeometry(1.6,14,.6),M.white,O2+154+i*4.6,0,62,plugV,true));const fl=[];for(let i=0;i<5;i++)fl.push(add(new T.BoxGeometry(1.2,.5,12),M.white,O2+155+i*5.5,0,0,plugV,true));plugV.userData={pour,st,fl,k:1};sc.add(plugV);}
   const rclM=RCLIMB.map(c=>{if(c.hz)return new T.Group();if(c.net)return add(new T.PlaneGeometry(c.w,c.h,3,14),M.net,0,0,4,null,true);const g=new T.Group();box(1.8,c.h+(c.chain?560:0),1.8,c.chain?M.steel:M.white,0,c.chain?280:0,0,g);if(c.chain){const a=add(new T.TorusGeometry(8,1.8,5,8,Math.PI),M.steel,0,-c.h/2+2,0,g);a.rotation.z=Math.PI;box(20,2.4,2.4,M.steel,0,-c.h/2+12,0,g);}sc.add(g);return g;});
   const rropeM=RROPE.map(()=>seg(M.white,1.2));
+  const pulley=new T.Group();{const w=add(new T.CylinderGeometry(7.5,7.5,3,8),M.wood,0,0,0,pulley);w.rotation.x=Math.PI/2;for(let i=0;i<4;i++){const sp=box(14,1.2,3.6,M.dark,0,0,0,pulley);sp.rotation.z=i*Math.PI/4;}box(2,9,5,M.dark,0,4,0,pulley).userData.fix=1;pulley.position.set(O3+273,-133,-2);sc.add(pulley);}
   const rwhM=RWHEEL.map(w=>{const m=add(new T.TorusGeometry(9,1.6,5,10),M.steel,w.x,-w.y,-8);for(let i=0;i<2;i++)box(18,1.4,1.4,M.steel,0,0,0,m).rotation.z=i*Math.PI/2;fixSeg(M.steel,2.4,w.x,w.y+18,w.x,w.y+9,-8);return m;});
   const sledsM=[];
   const hideLamp=add(new T.SphereGeometry(6.4,8,6),M.teal,0,-182,10,null,true),hideL=new T.PointLight(0x66d6c6,0,170,1.6);sc.add(hideL);
@@ -1796,8 +1797,9 @@ function init3D(){
     const alive=!p.dead;hero.g.visible=alive&&!p.hide;
     if(alive){const air=!p.onGround,armOut=lantern.held||!!p.held||!!p.pull||p.climb||p.hang||p.ropePull||p.wheel||p.brace||state==='lamp';
       poseChild(hero,p.x+7,p.y+28+Math.min(0,0),p.face,p.walkT,p.moving,air,armOut,AGE);
+      if(p.hoist){const a=Math.sin((p.hoistT||0)*6.2);hero.armF.rotation.z=1.75+a*.55;hero.armB.rotation.z=1.75-a*.55;hero.armF.scale.y=hero.armB.scale.y=1.15;hero.legL.rotation.z=.35;hero.legR.rotation.z=-.25;hero.g.rotation.z=-.1-Math.max(0,a)*.12;}else hero.g.rotation.z=0;   // 줄을 두 손으로 번갈아 당기며 몸을 뒤로 젖힌다
       {const onNet=p.climb&&!p.climb2&&NETS.some(n=>p.x+14>n.x&&p.x<n.x+n.w+4);heroZ+=((onNet?66:0)-heroZ)*.18;if(heroZ<.3)heroZ=0;hero.g.position.z=heroZ;
-       if(p.climb&&!p.climb2){const a=Math.sin(p.walkT*8);hero.armB.rotation.z=2.55+a*.4;hero.armB.scale.y=1.25;hero.legL.rotation.z=.55+a*.5;hero.legR.rotation.z=.55-a*.5;hero.g.position.y+=Math.abs(a)*1.2;hero.g.rotation.z=0;}}   // 그물·사다리는 한 손으로 탄다: 빈 손을 위로 뻗어 옮겨 잡고 두 다리를 번갈아 올린다
+       if(p.climb&&!p.climb2){const a=Math.sin(p.walkT*8);hero.armB.rotation.z=2.55+a*.4;hero.armB.scale.y=1.25;hero.legL.rotation.z=.55+a*.5;hero.legR.rotation.z=.55-a*.5;hero.g.position.y+=Math.abs(a)*1.2;}}   // 그물·사다리는 한 손으로 탄다: 빈 손을 위로 뻗어 옮겨 잡고 두 다리를 번갈아 올린다
       {// 펄에 빠지면 가까운 말뚝이나 앞선 몸 쪽으로 손을 뻗고, 붙잡으면 쥐고 버틴다
        let st=null,mode=0;const c=p.x+7;
        if(p.pull){st=p.pull.x;mode=2;}else if(p.anchor!=null&&p.onGround){st=p.anchor;mode=2;}
@@ -1827,6 +1829,7 @@ function init3D(){
     for(const g of crabs){const c=g.userData.c,x=c[0]+Math.sin(time*.6+c[2])*16,near=Math.abs(p.x+7-x)<54&&!p.dead;c[3]+=((near?1:0)-c[3])*.12;g.position.set(x,-topAt(c[0])-c[3]*5,c[1]);g.visible=c[3]<.92;g.rotation.y=Math.sin(time*.6+c[2])>0?.3:-.3;}
     RDYN.forEach((d,i)=>{const m=rdynM[i];m.visible=d.y<5000;if(m.visible)m.position.set(d.x+d.w/2,-(d.y+d.h/2),0);});
     RCLIMB.forEach((c,i)=>rclM[i].position.set(c.x+c.w/2,-(c.y+c.h/2),c.net?4:2));
+    pulley.rotation.z=(297-RM.hoist.b.y)/7.5;
     RROPE.forEach((q,i)=>{const a=q.pts();setSeg(rropeM[i],a[0],a[1],a[2],a[3],-6);});
     RWHEEL.forEach((w,i)=>rwhM[i].rotation.z=w.ang());
     {const on=ghostLit();for(const [m,pl,l] of stormLamps){m.material=on?M.teal:M.tealOff;pl.intensity=on&&Math.abs(tx-l.x)<900?2600:0;}}
