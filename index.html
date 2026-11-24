@@ -115,7 +115,7 @@ const statics=[
 ];
 const spikes=[];
 const MUDS=[
-  {x:1060,w:180,rate:12,stakes:[1130]},
+  {x:1060,w:180,rate:12,stakes:[1130],nobody:true},
   {x:1320,w:232,rate:13,stakes:[]},
   {x:1680,w:360,rate:30,stakes:[],holes:[1742,1844,1898,1988],decoys:[1778,1806,1868,1934,1957,2021]},
   {x:2640,w:560,rate:25,stakes:[2690,2750,2810,2870],deep:true},
@@ -239,11 +239,11 @@ function rwaveAt(x,f){if(f>225)for(const z of RWAVE)if(x>z.x&&x<z.x2)return z;re
 // 14 줄 걸기 (2장, 선창): 늘어진 줄 끝을 잡고 말뚝을 지나가면 걸린다. 먼 말뚝에 걸어야 팽팽해져 매달려 건널 수 있다
 {const r=mkRoom('rope',O14,9,{blockX:4900,blockY:150,ax:4876,bx:4936,y:300},{inY:300,outX:O14+740,outY:270});
  statics.push({x:O14-60,y:200,w:50,h:300,rock:true},{x:O14-10,y:250,w:22,h:300,rock:true},{x:O14-60,y:300,w:390,h:200},{x:O14+330,y:324,w:270,h:200},{x:O14+600,y:270,w:220,h:400,rock:true});MUDS.push({x:O14+330,w:270,rate:25,stakes:[],deep:true});
- const TP=[O14+606,240],PS=[{x:O14+250,gy:300,ty:267},{x:O14-35,gy:200,ty:167}];
+ const TP=[O14+606,231],PS=[{x:O14+250,gy:300,ty:267},{x:O14-35,gy:200,ty:167}];
  RM.rope={held:false,hook:0,ex:O14+300,ey:298,clear:0,wait:false,TP,PS,L:Math.hypot(TP[0]-PS[1].x,TP[1]-(PS[1].gy-14))+3,segs:[]};
  for(let i=0;i<33;i++){const s={x:O14-40+i*20,y:9000,w:22,h:12,hz:true,slide:true,ly:0};s.ly=PS[1].ty+(TP[1]-PS[1].ty)*clamp((s.x+11-PS[1].x)/(TP[0]-PS[1].x),0,1);RM.rope.segs.push(s);RCLIMB.push(s);}
  for(let i=0;i<12;i++)RROPE.push({pts:()=>ropePts(i)});
- RDECO.push({x:O14+248,y:265,w:4,h:35,z:-6,d:4,mat:'wood'},{x:O14-37,y:165,w:4,h:35,z:-6,d:4,mat:'wood'},{x:O14+604,y:236,w:5,h:34,z:-6,d:5,mat:'wood'});
+ RDECO.push({x:O14+248,y:265,w:4,h:35,z:-6,d:4,mat:'wood'},{x:O14-37,y:165,w:4,h:35,z:-6,d:4,mat:'wood'},{x:O14+604,y:227,w:5,h:43,z:-6,d:5,mat:'wood'});
  r.init=()=>{Object.assign(RM.rope,{held:false,hook:0,ex:O14+300,ey:298,clear:0,wait:false});};r.reset=()=>{};}
 function ropeFloor(x){return x<O14-10?199:(x<O14+12?249:(x>=O14+600?269:299));}
 function ropeLineY(x){const q=RM.rope,P=q.PS[1];return P.ty+(q.TP[1]-P.ty)*clamp((x-P.x)/(q.TP[0]-P.x),0,1);}
@@ -445,7 +445,7 @@ function ch2Step(dt,L,R,G,dir){
     if(p.x+14>=KEDGE-2&&R){p.hang=true;knot.t=0;p.held=null;return true;}
     if(p.x+7>KEDGE-44&&L&&!R&&knot.n<3){knot.t+=dt;if(knot.t>.6){knot.n++;knot.t=0;sfx('knot');}p.ropePull=true;p.face=1;p.walkT+=dt*.5;return false;}}
   const nr=G?netRects().find(q=>overlap(p,q)):null;if(!nr&&p.climb&&p.cvx){p.vx=p.cvx;}p.climb=!!nr;p.climb2=!!(nr&&(nr.hz||nr.chain||nr.rope));p.climbC=nr&&nr.chain?nr:null;p.climbS=!!(nr&&nr.slide);p.cvx=nr&&nr.vx?nr.vx:0;
-  if(p.climb){p.held=null;if(nr.hz)p.y+=(nr.y-p.y)*Math.min(1,dt*14);if(nr.chain||nr.w<14)movePX((nr.dx||0)+(dir?0:((nr.x+nr.w/2)-(p.x+7))*.2),false);if(dir){p.face=dir;movePX(dir*SPD*.5*dt,false);}p.vy=0;p.vx=0;p.onGround=false;p.coyote=0;jumpBuf=0;
+  if(p.climb){p.held=null;if(nr.hz)p.y+=(nr.y+7-p.y)*Math.min(1,dt*14);if(nr.chain||nr.w<14)movePX((nr.dx||0)+(dir?0:((nr.x+nr.w/2)-(p.x+7))*.2),false);if(dir){p.face=dir;movePX(dir*SPD*.5*dt,false);}p.vy=0;p.vx=0;p.onGround=false;p.coyote=0;jumpBuf=0;
     if(inp('jump')&&!nr.hz){p.y-=75*dt;for(const s of playerSolids())if(overlap(p,s))p.y=s.y+s.h;p.walkT+=dt;}
     p.moving=!!dir||inp('jump');p.sink=0;return true;}
   if(raft.free&&G&&L&&!R&&p.onGround&&onTop(p,raft)&&raft.x<RAFT_MAX){p.ropePull=true;p.face=-1;p.walkT+=dt*.6;}
@@ -894,7 +894,7 @@ function stepPlayer(dt){
   {const m=mudAt(p.x+7),fy=p.y+p.h;
    const sup=supported()||(p.anchor!==null);
    if(m&&p.vy>=0&&!sup&&fy>=MUD_TOP-.5&&(p.onGround||fy>=MUD_TOP)){if(p.sink===0&&wasAir&&vy>200)p.sink=12;   // 뛰어들면 그만큼 깊이 박힌다
-   p.sink+=m.rate*MUDK[AGE]*dt;p.y=MUD_TOP+p.sink-p.h;p.vy=0;p.onGround=true;if(p.sink>=22)return die(m.deep?'deep':'mud');}
+   p.sink+=m.rate*MUDK[AGE]*dt;p.y=MUD_TOP+p.sink-p.h;p.vy=0;p.onGround=true;if(p.sink>=22)return die(m.deep||m.nobody?'deep':'mud');}
    else if(sup||!m||fy<=MUD_TOP)p.sink=0;}
   // 물: 머리까지 잠기면 숨이 줄어든다
   if(wl!==null&&p.y+5>wl){p.breath-=dt;if(Math.random()<dt*6)bubbles.push({x:p.x+7+(Math.random()-.5)*6,y:p.y+4,l:1.2});if(p.breath<=0)return die('drown');}
@@ -1719,7 +1719,7 @@ function init3D(){
     o.armB=new T.Group();o.armB.position.set(-1,19,-3.6);box(2.3,8,2.3,M.navy,0,-4,0,o.armB);g.add(o.armB);
     sc.add(g);return o;}
   function poseChild(o,x,y,face,walkT,moving,air,armOut,age){o.g.position.set(x,-y,0);o.g.rotation.y=face>0?0:Math.PI;const k=AGESC[age]||1;o.g.scale.setScalar(k);
-    const sw=moving&&!air?Math.sin(walkT*15)*.7:0;o.legL.rotation.z=air?.5:sw;o.legR.rotation.z=air?-.6:-sw;o.armB.rotation.z=air?-.8:-sw*.8;o.armF.rotation.z=armOut?1.15:(air?.9:sw*.8);
+    const sw=moving&&!air?Math.sin(walkT*15)*.7:0;o.legL.rotation.z=air?.5:sw;o.legR.rotation.z=air?-.6:-sw;o.armB.rotation.z=air?-.8:-sw*.8;o.armF.scale.y=o.armB.scale.y=1;o.armF.rotation.z=armOut?1.15:(air?.9:sw*.8);
     o.towel.visible=age<2;o.bootL.visible=o.bootR.visible=age>=2;o.shoeL.visible=o.shoeR.visible=age<2;o.tail.rotation.z=.4+Math.sin(time*9)*(moving||air?.35:.08);}
   const hero=mkChild(),kidM=mkChild();
   const lanternM=new T.Group();box(6,7.4,6,M.glow,0,0,0,lanternM);box(8.6,1.4,8.6,M.dark,0,-4.4,0,lanternM);{const rf=add(new T.ConeGeometry(6.4,3.6,4),M.dark,0,5.4,0,lanternM);rf.rotation.y=Math.PI/4;for(const [a,b] of [[-3.4,-3.4],[3.4,-3.4],[-3.4,3.4],[3.4,3.4]])box(.9,8,.9,M.dark,a,0,b,lanternM);add(new T.TorusGeometry(3,.5,4,8,Math.PI),M.dark,0,7,0,lanternM);}sc.add(lanternM);
@@ -1793,7 +1793,8 @@ function init3D(){
        let st=null,mode=0;const c=p.x+7;
        if(p.pull){st=p.pull.x;mode=2;}else if(p.anchor!=null&&p.onGround){st=p.anchor;mode=2;}
        else if(p.sink>0){for(const x of STAKE_LIST)if(Math.abs(c-x)<=26&&(st===null||Math.abs(c-x)<Math.abs(c-st)))st=x;if(st!==null)mode=1;}
-       if(mode){const d=(Math.sign(st-c)||p.face)*p.face,near=Math.abs(st-c)<=16;hero.armB.rotation.z=d*(mode===2?1.45:1.8+(near?0:Math.sin(time*9)*.3));}}}
+       if(mode){const d=(Math.sign(st-c)||p.face)*p.face,near=Math.abs(st-c)<=16;hero.armB.rotation.z=d*(mode===2?1.45:1.8+(near?0:Math.sin(time*9)*.3));}}
+      if(p.climb&&p.climb2){const sw=p.moving?Math.sin(p.walkT*9)*.28:0;hero.armF.rotation.z=3.05+sw;hero.armB.rotation.z=3.05-sw;hero.armF.scale.y=hero.armB.scale.y=1.7;hero.legL.rotation.z=.12-sw*.5;hero.legR.rotation.z=-.12+sw*.5;}}   // 줄에 매달릴 때는 두 팔을 머리 위로 뻗어 번갈아 옮겨 잡는다
     kidM.g.visible=!!kid&&state!=='end';if(kidM.g.visible)poseChild(kidM,kid.x,300,1,kid.t,kid.moving,false,false,0);
     // 등불
     const lx=lantern.x+4,ly=lantern.y+7,lz=lantern.held?5:2;lanternM.position.set(lx,-ly,lz);flare.position.set(lx,-ly,lz+6);
