@@ -399,12 +399,12 @@ function cpOrd(){return checkpoints[cpi].ord;}
 function curEnd(){const o=cpOrd();return ENDS[o<9?0:o<15?1:o<19?2:3];}
 function initCh2(){AGE=0;pendingAge=0;net={st:'ready',t:0,y:NETR.top,r:8,caught:false};knot={n:0,t:0,done:false};
   raft={x:RAFT_OUT,y:HARBOR_WL-6,w:90,h:10,free:false};crA={x:CRA.x,y:CR_LOW,w:CRA.w,h:4};crB={x:CRB.x,y:CR_LOW,w:CRB.w,h:4};cargoT=0;
-  objs.push({type:'crate',x:6775,y:236,w:16,h:14,vy:0,wt:1});}
+  objs.push({type:'crate',x:6775,y:236,w:16,h:14,vy:0,wt:1});}   // 작은 어구 상자(1). 나 그물에는 묶인 짐(2)이 실려 있다
 function netRects(){const a=NETS.slice();if(net.st==='stuck')a.push({x:NETR.x,y:NETR.top,w:NETR.w,h:BOATD.y-34-NETR.top});a.push(LADDER);for(const c of RCLIMB)a.push(c);return a;}
 function dynSolids(){return [raft,crA,crB,gate].concat(debris,RDYN);}
 function onTop(e,s){return Math.abs(e.y+e.h-s.y)<2.5&&e.x<s.x+s.w&&e.x+e.w>s.x;}
 function cradleW(c){let w=0;for(const o of objs){if(o.ghost)continue;const ov=Math.min(o.x+o.w,c.x+c.w)-Math.max(o.x,c.x);if(ov>=o.w*.4&&Math.abs(o.y+o.h-c.y)<3)w+=o.wt||1;}
-  if(!p.dead&&p.onGround&&Math.abs(p.y+p.h-c.y)<3&&p.x+7>=c.x&&p.x+7<c.x+c.w)w+=WT[AGE];return w;}
+  if(!p.dead&&p.onGround&&Math.abs(p.y+p.h-c.y)<3&&p.x+7>=c.x&&p.x+7<c.x+c.w)w+=WT[AGE];if(c===crB)w+=2;return w;}   // 나 그물 밑에는 그물에 싸인 짐(무게 2)이 매달려 있다
 function ch2Tick(dt){
   const n=net,bt=BOATD.y,alive=state==='play'&&!p.dead;
   // 투망: 배에 내려선 아이에게 그물이 던져진다
@@ -430,7 +430,8 @@ function ch2Tick(dt){
    for(const [c,up] of [[crA,riding&&wb>wa],[crB,riding&&wa>wb]]){const d=clamp((up?CR_HIGH:CR_LOW)-c.y,-40*dt,40*dt);if(!d)continue;
      for(const o of objs)if(!o.ghost&&onTop(o,c))o.y+=d;if(alive&&p.onGround&&onTop(p,c))p.y+=d;c.y+=d;}   // 오르든 내리든 그물 위의 것은 그물과 함께 움직인다(전에는 내려갈 때 통통 떨어졌다)
    // 나 그물에 오래 서 있으면 그물이 오므라든다
-   if(alive&&p.onGround&&onTop(p,crB)&&p.x+7>=crB.x+4&&p.x+7<crB.x+crB.w-4){if(cargoT<=.25&&cargoT+dt>.25)sfx('knot');cargoT+=dt;if(cargoT>1.7){cargoT=0;die('cargo');}}else cargoT=Math.max(0,cargoT-dt*2);}
+   for(const o of objs)if(o.type==='crate'&&!o.ghost&&o.x>6560&&o.x<6900&&o.y>262&&p.held!==o){o.x=6775;o.y=236;o.vy=0;}   // 물에 빠뜨린 상자는 제자리에 다시 놓인다
+   cargoT=0;}   // (2026-11-24) 그물에 서 있으면 감싸여 쓰러지던 것을 뺐다. 까닭 없는 죽음이었다. 이제 짐의 무게만으로 푼다
 }
 /* 줄: 고풀이 매듭을 당겨 풀기, 줄에 매달리기, 그물 타기, 부표 줄 당기기. 무엇인가 했으면 true */
 function ch2Step(dt,L,R,G,dir){
@@ -1769,6 +1770,7 @@ function init3D(){
   fixSeg(M.white,1.3,KEDGE,150,6030,232,-5);fixSeg(M.white,1.3,6030,232,6712,232,-5);for(let x=6070;x<6700;x+=90)add(new T.SphereGeometry(4,6,5),M.orange,x,-235,-5);fixSeg(M.wood,3,6712,250,6712,226,-16);const pullLine=seg(M.dark,.9);
   fixSeg(M.wood,4.4,6838,150,6838,85,-14);fixSeg(M.wood,4.4,6838,86,6742,86,-14);
   const cargoBag=add(new T.SphereGeometry(1,8,6),M.net,0,0,0,null,true);cargoBag.visible=false;
+  const loadB=new T.Group();{add(jit(new T.IcosahedronGeometry(9,0),1.5),M.wood,0,0,0,loadB).scale.set(1.5,1,1.2);const n=add(new T.SphereGeometry(10.5,8,6),M.net,0,0,0,loadB,true);n.scale.set(1.5,1,1.2);sc.add(loadB);}
   const cr=[crA,crB].map(()=>({m:box(1,4,30,M.wood,0,0,0),l:seg(M.dark,.9),a:seg(M.dark,.7),b:seg(M.dark,.7)}));
   // 3장: 수문, 정치망
   gbox(GATE.x-3,84,GATE.w+6,10,0,44,M.steel);gbox(GATE.x-3,92,3,208,22,3,M.steel);gbox(GATE.x+GATE.w,92,3,208,22,3,M.steel);
@@ -1866,6 +1868,7 @@ function init3D(){
      if(p.hang&&!p.dead)setSeg(ropeB,KEDGE,140,p.x+5,p.y+5,-2);else if(knot.done)setSeg(ropeB,KEDGE+1,141,KEDGE+4,HARBOR_WL-2,-2);else setSeg(ropeB,KEDGE+1,141,KEDGE+2,143,-2);
      ropeC.visible=ropeD.visible=!knot.done;if(!knot.done){setSeg(ropeC,KEDGE+1,141,KFAR.x,KFAR.y,-3);setSeg(ropeD,KFAR.x,KFAR.y,raft.x+88,raft.y+1,-3);}
      raftM.position.set(raft.x+45,-(raft.y+3),0);pullLine.visible=p.ropePull&&!p.dead&&!onTop(p,raft);if(pullLine.visible)setSeg(pullLine,p.x+7,p.y+8,p.x+2,233,-6);
+     loadB.position.set(crB.x+15,-(crB.y-7),-7);loadB.scale.setScalar(.8);
      {const k=clamp(cargoT/1.7,0,1),bd=objs.find(o=>o.cargo&&!o.ghost&&o.y<700);cargoBag.visible=(k>.03&&!p.dead)||!!bd;   // 나 그물에 서 있으면 그물 자락이 발밑에서부터 오므라들어 몸을 감싼다
       if(k>.03&&!p.dead){cargoBag.position.set(p.x+7,-(crB.y-2-15*k),2);cargoBag.scale.set(24-9*k,2+15*k,16-3*k);}else if(bd){cargoBag.position.set(bd.x+14,-(bd.y+6),2);cargoBag.scale.set(19,9,13);}}
      [crA,crB].forEach((c,i)=>{const q=cr[i],mx=c.x+c.w/2;q.m.scale.x=c.w;q.m.position.set(mx,-(c.y+2),0);setSeg(q.l,mx,87,mx,c.y-34,0);setSeg(q.a,mx,c.y-34,c.x+1,c.y,0);setSeg(q.b,mx,c.y-34,c.x+c.w-1,c.y,0);});}
