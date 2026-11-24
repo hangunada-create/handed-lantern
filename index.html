@@ -400,7 +400,7 @@ function curEnd(){const o=cpOrd();return ENDS[o<9?0:o<15?1:o<19?2:3];}
 function initCh2(){AGE=0;pendingAge=0;net={st:'ready',t:0,y:NETR.top,r:8,caught:false};knot={n:0,t:0,done:false};
   raft={x:RAFT_OUT,y:HARBOR_WL-6,w:90,h:10,free:false};crA={x:CRA.x,y:CR_LOW,w:CRA.w,h:4};crB={x:CRB.x,y:CR_LOW,w:CRB.w,h:4};cargoT=0;
   objs.push({type:'crate',x:6775,y:236,w:16,h:14,vy:0,wt:1});}
-function netRects(){const a=NETS.slice();if(net.st==='stuck')a.push({x:NETR.x,y:NETR.top,w:NETR.w,h:BOATD.y+6-NETR.top});a.push(LADDER);for(const c of RCLIMB)a.push(c);return a;}
+function netRects(){const a=NETS.slice();if(net.st==='stuck')a.push({x:NETR.x,y:NETR.top,w:NETR.w,h:BOATD.y-34-NETR.top});a.push(LADDER);for(const c of RCLIMB)a.push(c);return a;}
 function dynSolids(){return [raft,crA,crB,gate].concat(debris,RDYN);}
 function onTop(e,s){return Math.abs(e.y+e.h-s.y)<2.5&&e.x<s.x+s.w&&e.x+e.w>s.x;}
 function cradleW(c){let w=0;for(const o of objs){if(o.ghost)continue;const ov=Math.min(o.x+o.w,c.x+c.w)-Math.max(o.x,c.x);if(ov>=o.w*.4&&Math.abs(o.y+o.h-c.y)<3)w+=o.wt||1;}
@@ -1744,7 +1744,7 @@ function init3D(){
   gbox(5236,178,44,17,-40,4,M.cabin);fixSeg(M.wood,2,5240,210,5240,194,-40);fixSeg(M.wood,2,5276,210,5276,194,-40);
   {const b=BOATD;gbox(b.x,b.y,b.w,24,0,46,M.hull);box(3,7,3,M.wood,b.x+4,-b.y+3.5,14);box(3,7,3,M.wood,b.x+b.w-4,-b.y+3.5,14);}
   fixSeg(M.wood,4,DAVX,140,DAVX,84,-12);fixSeg(M.wood,4,DAVX,85,HOOKX-5,85,-12);
-  const netBag=add(new T.SphereGeometry(1,8,6),M.net,HOOKX,0,0,null,true),netLine=seg(M.dark,.9),netLad=add(new T.PlaneGeometry(NETR.w,BOATD.y+6-NETR.top,3,16),M.net,NETR.x+NETR.w/2,-(NETR.top+(BOATD.y+6-NETR.top)/2),4,null,true);
+  const netBag=add(new T.SphereGeometry(1,8,6),M.net,HOOKX,0,0,null,true),netLine=seg(M.dark,.9),netLad=add(new T.PlaneGeometry(NETR.w,BOATD.y-34-NETR.top,3,16),M.net,NETR.x+NETR.w/2,-(NETR.top+(BOATD.y-34-NETR.top)/2),4,null,true);
   gbox(KPOST-5,116,10,24,-6,10,M.wood);const knotS=[];for(let i=0;i<7;i++)knotS.push(add(new T.SphereGeometry(2.6,6,5),M.white,KPOST+14+i*11,-136,-4,null,true));
   const ropeA=fixSeg(M.white,1.6,KPOST,126,KEDGE,138.5,-4),ropeB=seg(M.white,1.6);
   const raftM=box(90,6,36,M.wood,0,0,0);for(let i=0;i<5;i++)box(12,6,30,M.wood,-36+i*18,-5,0,raftM);
