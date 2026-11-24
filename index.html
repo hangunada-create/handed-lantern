@@ -162,7 +162,7 @@ function plugged(){return objs.some(o=>o.type==='body'&&!o.ghost&&o.x+14>O2+146&
 // 3 등불을 줄로 끌어올리기 (2장, 고풀이 앞)
 {const r=mkRoom('hoist',O3,11,{blockX:5696,blockY:-20,ax:5650,bx:5756,y:140},{inY:300,outX:O3+740,outY:160,need:true});
  statics.push({x:O3-60,y:300,w:362,h:200},{x:O3+302,y:160,w:518,h:340,rock:true});
- RM.hoist={b:{x:O3+244,y:297,w:58,h:4,mat:'wood'}};RDYN.push(RM.hoist.b);RCLIMB.push({x:O3+284,y:146,w:18,h:154,rope:true});
+ RM.hoist={b:{x:O3+244,y:297,w:58,h:4,mat:'wood'}};RDYN.push(RM.hoist.b);RCLIMB.push({x:O3+284,y:146,w:18,h:154,rope:true,front:true});RDECO.push({x:O3+300,y:138,w:4,h:22,z:62,d:4,mat:'wood'},{x:O3+289,y:138,w:14,h:3,z:62,d:4,mat:'wood'});
  RROPE.push({pts:()=>p&&p.hoist?[p.x+2,p.y+13+Math.sin((p.hoistT||0)*6.2)*3,O3+279,128]:[O3+330,150,O3+279,128]},{pts:()=>[O3+268,128,O3+268,RM.hoist.b.y]});RDECO.push({x:O3+327,y:126,w:6,h:34,z:-6,d:6,mat:'wood'},{x:O3+268,y:124,w:64,h:4,z:-6,d:5,mat:'wood'});
  r.init=r.reset=()=>{if(!(onTop(lantern,RM.hoist.b)&&RM.hoist.b.y<290))RM.hoist.b.y=297;};}
 // 4 얇은 널 (2장, 소년이 된 뒤 큰 배 위)
@@ -444,11 +444,12 @@ function ch2Step(dt,L,R,G,dir){
   if(!knot.done&&G&&p.onGround&&Math.abs(p.y+p.h-140)<2){
     if(p.x+14>=KEDGE-2&&R){p.hang=true;knot.t=0;p.held=null;return true;}
     if(p.x+7>KEDGE-44&&L&&!R&&knot.n<3){knot.t+=dt;if(knot.t>.6){knot.n++;knot.t=0;sfx('knot');}p.ropePull=true;p.face=1;p.walkT+=dt*.5;return false;}}
-  const nr=G?netRects().find(q=>overlap(p,q)):null;if(!nr&&p.climb&&p.cvx){p.vx=p.cvx;}p.climb=!!nr;p.climb2=!!(nr&&(nr.hz||nr.chain||nr.rope));p.climbC=nr&&nr.chain?nr:null;p.climbS=!!(nr&&nr.slide);p.cvx=nr&&nr.vx?nr.vx:0;
-  if(p.climb){p.held=null;if(nr.hz)p.y+=(nr.y+7-p.y)*Math.min(1,dt*14);if(nr.chain||nr.w<14)movePX((nr.dx||0)+(dir?0:((nr.x+nr.w/2)-(p.x+7))*.2),false);if(dir){p.face=dir;movePX(dir*SPD*.5*dt,false);}p.vy=0;p.vx=0;p.onGround=false;p.coyote=0;jumpBuf=0;
+  const nr=G?netRects().find(q=>overlap(p,q)):null;if(!nr&&p.climb&&p.cvx){p.vx=p.cvx;}p.climb=!!nr;p.climb2=!!(nr&&(nr.hz||nr.chain||nr.rope));p.climbC=nr&&nr.chain?nr:null;p.climbS=!!(nr&&nr.slide);p.climbHz=!!(nr&&nr.hz);p.climbFront=!!(nr&&nr.front);p.cvx=nr&&nr.vx?nr.vx:0;
+  if(p.climb){p.held=null;p.ledge=Math.max(0,(p.ledge||0)-dt);if(nr.hz)p.y+=(nr.y+7-p.y)*Math.min(1,dt*14);if((nr.chain||nr.rope||nr.w<14)&&!p.ledge)movePX((nr.dx||0)+(dir?0:((nr.x+nr.w/2)-(p.x+7))*.2),false);if(dir){p.face=dir;movePX(dir*SPD*.5*dt,false);}p.vy=0;p.vx=0;p.onGround=false;p.coyote=0;jumpBuf=0;
     if(inp('jump')&&!nr.hz){p.y-=75*dt;const sol=playerSolids();for(const s of sol)if(overlap(p,s))p.y=s.y+s.h;p.walkT+=dt;
-      if(!nr.chain&&!nr.rope){let led=null;for(const s of sol)if(s.y>=nr.y&&s.y<nr.y+nr.h&&s.y>=p.y+p.h-1.5&&s.y<p.y+p.h+8&&s.x<=p.x+p.w+8&&s.x+s.w>=p.x-8)led=s;
-        if(led&&p.y+p.h<=led.y){p.y=led.y-p.h;movePX((led.x+led.w/2>p.x+7?1:-1)*90*dt,false);}}}   // 그물 꼭대기까지 떠오르지 않고, 옆의 턱 높이에 닿으면 그 위로 올라선다
+      if(!nr.chain){let led=null;for(const s of sol)if(s.y>=nr.y&&s.y<nr.y+nr.h&&s.y>=p.y+p.h-1.5&&s.y<p.y+p.h+8&&((s.x>=p.x+p.w-2&&s.x<=p.x+p.w+8)||(s.x+s.w<=p.x+2&&s.x+s.w>=p.x-8)))led=s;
+        if(!led&&p.ledge>0&&p.ledS)led=p.ledS;
+        if(led&&p.y+p.h<=led.y){p.y=led.y-p.h;p.ledge=.15;p.ledS=led;movePX((led.x+led.w/2>p.x+7?1:-1)*90*dt,false);}}}   // 그물 꼭대기까지 떠오르지 않고, 옆의 턱 높이에 닿으면 그 위로 올라선다
     p.moving=!!dir||inp('jump');p.sink=0;return true;}
   if(raft.free&&G&&L&&!R&&p.onGround&&onTop(p,raft)&&raft.x<RAFT_MAX){p.ropePull=true;p.face=-1;p.walkT+=dt*.6;}
   return false;
@@ -1798,14 +1799,15 @@ function init3D(){
     if(alive){const air=!p.onGround,armOut=lantern.held||!!p.held||!!p.pull||p.climb||p.hang||p.ropePull||p.wheel||p.brace||state==='lamp';
       poseChild(hero,p.x+7,p.y+28+Math.min(0,0),p.face,p.walkT,p.moving,air,armOut,AGE);
       if(p.hoist){const a=Math.sin((p.hoistT||0)*6.2);hero.armF.rotation.z=1.75+a*.55;hero.armB.rotation.z=1.75-a*.55;hero.armF.scale.y=hero.armB.scale.y=1.15;hero.legL.rotation.z=.35;hero.legR.rotation.z=-.25;hero.g.rotation.z=-.1-Math.max(0,a)*.12;}else hero.g.rotation.z=0;   // 줄을 두 손으로 번갈아 당기며 몸을 뒤로 젖힌다
-      {const onNet=p.climb&&!p.climb2&&NETS.some(n=>p.x+14>n.x&&p.x<n.x+n.w+4);heroZ+=((onNet?66:0)-heroZ)*.18;if(heroZ<.3)heroZ=0;hero.g.position.z=heroZ;
+      {const onNet=p.climb&&((!p.climb2&&NETS.some(n=>p.x+14>n.x&&p.x<n.x+n.w+4))||p.climbFront);heroZ+=((onNet?66:0)-heroZ)*.18;if(heroZ<.3)heroZ=0;hero.g.position.z=heroZ;
        if(p.climb&&!p.climb2){const a=Math.sin(p.walkT*8);hero.armB.rotation.z=2.55+a*.4;hero.armB.scale.y=1.25;hero.legL.rotation.z=.55+a*.5;hero.legR.rotation.z=.55-a*.5;hero.g.position.y+=Math.abs(a)*1.2;}}   // 그물·사다리는 한 손으로 탄다: 빈 손을 위로 뻗어 옮겨 잡고 두 다리를 번갈아 올린다
       {// 펄에 빠지면 가까운 말뚝이나 앞선 몸 쪽으로 손을 뻗고, 붙잡으면 쥐고 버틴다
        let st=null,mode=0;const c=p.x+7;
        if(p.pull){st=p.pull.x;mode=2;}else if(p.anchor!=null&&p.onGround){st=p.anchor;mode=2;}
        else if(p.sink>0){for(const x of STAKE_LIST)if(Math.abs(c-x)<=26&&(st===null||Math.abs(c-x)<Math.abs(c-st)))st=x;if(st!==null)mode=1;}
        if(mode){const d=(Math.sign(st-c)||p.face)*p.face,near=Math.abs(st-c)<=16;hero.armB.rotation.z=d*(mode===2?1.45:1.8+(near?0:Math.sin(time*9)*.3));}}
-      if(p.climb&&p.climb2){const sw=p.moving?Math.sin(p.walkT*9)*.28:0;hero.armF.rotation.z=3.05+sw;hero.armB.rotation.z=3.05-sw;hero.armF.scale.y=hero.armB.scale.y=1.7;hero.legL.rotation.z=.12-sw*.5;hero.legR.rotation.z=-.12+sw*.5;}}   // 줄에 매달릴 때는 두 팔을 머리 위로 뻗어 번갈아 옮겨 잡는다
+      if(p.climb&&p.climb2&&!p.climbHz){const a=Math.sin(p.walkT*8);hero.armF.rotation.z=2.5+a*.35;hero.armB.rotation.z=2.5-a*.35;hero.armF.scale.y=hero.armB.scale.y=1.2;hero.legL.rotation.z=.5+a*.4;hero.legR.rotation.z=.5-a*.4;}   // 외줄·닻줄은 두 손으로 줄을 번갈아 잡고 다리로 감아 오른다
+      else if(p.climb&&p.climb2){const sw=p.moving?Math.sin(p.walkT*9)*.28:0;hero.armF.rotation.z=3.05+sw;hero.armB.rotation.z=3.05-sw;hero.armF.scale.y=hero.armB.scale.y=1.7;hero.legL.rotation.z=.12-sw*.5;hero.legR.rotation.z=-.12+sw*.5;}}   // 줄에 매달릴 때는 두 팔을 머리 위로 뻗어 번갈아 옮겨 잡는다
     kidM.g.visible=!!kid&&state!=='end';if(kidM.g.visible)poseChild(kidM,kid.x,300,1,kid.t,kid.moving,false,false,0);
     // 등불
     const lx=lantern.x+4,ly=lantern.y+7,lz=lantern.held?5+heroZ:2;lanternM.position.set(lx,-ly,lz);flare.position.set(lx,-ly,lz+6);
@@ -1828,7 +1830,7 @@ function init3D(){
     for(const g of airFish){const f=g.userData.f,ph=time*.5+f[2];g.position.set(f[0]+Math.cos(ph)*46,-(f[1]+Math.sin(ph*1.3)*14),-52+Math.sin(ph)*30);g.rotation.y=Math.atan2(Math.cos(ph)*30,-Math.sin(ph)*46);f[3].rotation.y=Math.sin(time*9+f[2])*.6;}
     for(const g of crabs){const c=g.userData.c,x=c[0]+Math.sin(time*.6+c[2])*16,near=Math.abs(p.x+7-x)<54&&!p.dead;c[3]+=((near?1:0)-c[3])*.12;g.position.set(x,-topAt(c[0])-c[3]*5,c[1]);g.visible=c[3]<.92;g.rotation.y=Math.sin(time*.6+c[2])>0?.3:-.3;}
     RDYN.forEach((d,i)=>{const m=rdynM[i];m.visible=d.y<5000;if(m.visible)m.position.set(d.x+d.w/2,-(d.y+d.h/2),0);});
-    RCLIMB.forEach((c,i)=>rclM[i].position.set(c.x+c.w/2,-(c.y+c.h/2),c.net?4:2));
+    RCLIMB.forEach((c,i)=>rclM[i].position.set(c.x+c.w/2,-(c.y+c.h/2),c.front?62:(c.net?4:2)));
     pulley.rotation.z=(297-RM.hoist.b.y)/7.5;
     RROPE.forEach((q,i)=>{const a=q.pts();setSeg(rropeM[i],a[0],a[1],a[2],a[3],-6);});
     RWHEEL.forEach((w,i)=>rwhM[i].rotation.z=w.ang());
