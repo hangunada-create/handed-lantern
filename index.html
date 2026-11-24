@@ -828,7 +828,7 @@ function movePX(dx,allowStep){
   for(const s of playerSolids()){
     if(!overlap(p,s))continue;
     const rise=(p.y+p.h)-s.y;
-    if(allowStep&&(p.onGround||p.inWater)&&rise>0&&rise<=STEP&&freeAt(p.x,s.y-p.h)){p.y=s.y-p.h;continue;}
+    if(allowStep&&(p.onGround||p.inWater)&&rise>0&&rise<=(s.type==='body'&&p.sink>0?26:STEP)&&freeAt(p.x,s.y-p.h)){p.y=s.y-p.h;continue;}   // 펄에 빠진 채로도 앞선 몸에는 기어오를 수 있다
     p.x=dx>0?s.x-p.w:s.x+s.w;
   }
 }
@@ -1630,8 +1630,15 @@ function init3D(){
   const crabs=[];for(const x of [330,470,610,900,1250,1500,1600,2080,2420,2520,3240,3300,3520,3560]){const g=new T.Group();box(5,2.2,3.6,M.crab,0,1.6,0,g);box(2,1.6,1.6,M.crab,3,2.6,1.6,g);box(1.4,1.2,1.2,M.crab,-3,2.2,1.4,g);for(const dz of [-.9,.9])add(new T.SphereGeometry(.5,4,3),M.hole,1.4,3.4,dz+1,g);g.userData.c=[x+(r()-.5)*30,30+r()*20,r()*6,0];sc.add(g);crabs.push(g);}
   // 펄
   const mudHoles=[];
-  for(const m of MUDS){gbox(m.x,300.3,m.w,24.6,-45,210,m.deep?M.mudDeep:M.mud);
-    if(m.holes)for(const h of m.holes.concat(m.decoys||[])){const d=add(new T.CircleGeometry(3.4,8),new T.MeshBasicMaterial({color:0x050505,transparent:true}),h,-300.1,12,null,true);d.rotation.x=-Math.PI/2;d.scale.z=.6;d.userData.hx=h;mudHoles.push(d);}}
+  const mudTop=new T.MeshStandardMaterial({vertexColors:true,flatShading:true,roughness:.2,metalness:.28});
+  for(const m of MUDS){gbox(m.x,303.6,m.w,21.3,-45,210,m.deep?M.mudDeep:M.mud);
+    {const sx=Math.max(4,Math.round(m.w/13)),g=new T.PlaneGeometry(m.w,210,sx,13).rotateX(-Math.PI/2),pa=g.attributes.position,col=[],c=m.deep?[.13,.18,.21]:[.235,.185,.14];
+     for(let i=0;i<pa.count;i++){const x=pa.getX(i),z=pa.getZ(i),e=Math.min(1,(m.w/2-Math.abs(x))/9,(105-Math.abs(z))/9),w=Math.sin(x*.09+z*.05)*.7+Math.sin(z*.17-x*.03)*.5;
+       pa.setY(i,e<=0?0:(-1.9+w*.9+(r()-.5)*1.9)*e);const k=(.72+r()*.42)*(1-.18*Math.max(0,-w)),wet=r()<.16?1.25:1;col.push(c[0]*k*wet,c[1]*k*wet,c[2]*k*(wet>1?1.5:1));}
+     g.setAttribute('color',new T.Float32BufferAttribute(col,3));g.computeVertexNormals();const mm=new T.Mesh(g,mudTop);mm.position.set(m.x+m.w/2,-300.02,-45);mm.receiveShadow=true;sc.add(mm);
+     for(let i=0;i<m.w/34;i++){const d=add(new T.CircleGeometry(4+r()*7,7),M.puddle,m.x+8+r()*(m.w-16),-300.9,-120+r()*170,null,true);d.rotation.x=-Math.PI/2;d.scale.set(1.5,.5+r()*.4,1);}
+     for(let i=0;i<m.w/40;i++){const b=add(jit(new T.IcosahedronGeometry(2.2+r()*2.6,0),.7),m.deep?M.mudDeep:M.mud,m.x+6+r()*(m.w-12),-302.2,-125+r()*150);b.scale.y=.55;}}
+    if(m.holes)for(const h of m.holes.concat(m.decoys||[])){const d=add(new T.CircleGeometry(3.4,8),new T.MeshBasicMaterial({color:0x050505,transparent:true}),h,-299.5,12,null,true);d.rotation.x=-Math.PI/2;d.scale.z=.6;d.userData.hx=h;mudHoles.push(d);}}
   for(const x of STAKE_LIST){const g=new T.Group();add(jit(new T.CylinderGeometry(1.9,2.5,58,6,3),.5),M.wood,0,29,0,g);add(new T.CylinderGeometry(2.9,3.2,12,6),M.weed,0,5,0,g);add(new T.TorusGeometry(2.6,.6,4,8),M.white,0,39,0,g).rotation.x=Math.PI/2;add(new T.TorusGeometry(2.6,.6,4,8),M.white,0,37.4,0,g).rotation.x=Math.PI/2;g.position.set(x,-301,-7);g.rotation.z=(r()-.5)*.1;sc.add(g);}
   for(const o of OYSTERS)for(let x=o[0]+2;x<o[1]-2;x+=3+r()*3){const h=5+r()*6;add(new T.ConeGeometry(2+r()*2,h,4),M.shell,x,-300+h/2,-40+r()*90);}
   add(new T.SphereGeometry(8,7,5),M.orange,BUOY.x,-300,-22);
