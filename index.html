@@ -154,7 +154,7 @@ const O1=14000,O2=15000,O3=16000,O4=17000,O5=18000,O6=19000,O7=20000,O8=21000,O9
  statics.push({x:O1-60,y:300,w:180,h:200},{x:O1+120,y:324,w:400,h:200},{x:O1+520,y:300,w:300,h:200});MUDS.push({x:O1+120,w:400,rate:14,stakes:[]});
  r.init=r.reset=()=>{objs=objs.filter(o=>!(o.type==='sled'&&inRoom(o,r)));objs.push({type:'sled',x:O1+72,y:294,w:34,h:6,vy:0,vx:0,sink:0,wt:1});};}
 // 2 갯골 마개 (1장, 밀물 물골 앞)
-{const r=mkRoom('plug',O2,6,{blockX:3286,blockY:150,ax:3262,bx:3318,y:300,lo:2},{inY:300,outX:O2+740,outY:300});
+{const r=mkRoom('plug',O2,6,{blockX:3270,blockY:150,ax:3226,bx:3318,y:300,lo:2},{inY:300,outX:O2+740,outY:300});
  statics.push({x:O2-60,y:300,w:210,h:200},{x:O2+150,y:330,w:32,h:200},{x:O2+182,y:300,w:78,h:200},{x:O2+260,y:380,w:160,h:200},{x:O2+260,y:340,w:26,h:60},{x:O2+420,y:300,w:400,h:300});   // 웅덩이는 깊이 80, 왼쪽에만 되올라올 디딤턱이 있다. 건너편 둑은 이쪽과 같은 높이
  RM.plug={lv:382,ch:316};RWZ.push({x:O2+150,x2:O2+182,lv:()=>RM.plug.ch,rush:()=>!plugged()},{x:O2+182,x2:O2+260,lv:()=>RM.plug.ch<302.5?298.6:null},{x:O2+260,x2:O2+420,lv:()=>RM.plug.lv<379?RM.plug.lv:null});   // 막힌 갯골의 물이 둑까지 차올라, 땅 위로 얇게 넘쳐 웅덩이로 흘러든다
  r.init=()=>{RM.plug.lv=382;RM.plug.ch=316;r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:"crate",x:O2+298,y:372,w:92,h:8,vy:0,wt:1});};}
