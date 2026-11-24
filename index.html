@@ -115,8 +115,8 @@ const statics=[
 ];
 const spikes=[];
 const MUDS=[
-  {x:1060,w:140,rate:10,stakes:[1130]},
-  {x:1320,w:232,rate:10,stakes:[]},
+  {x:1060,w:140,rate:12,stakes:[1130]},
+  {x:1320,w:232,rate:13,stakes:[]},
   {x:1680,w:360,rate:30,stakes:[],holes:[1742,1844,1898,1988],decoys:[1778,1806,1868,1934,1957,2021]},
   {x:2640,w:560,rate:25,stakes:[2690,2750,2810,2870],deep:true},
   {x:3660,w:300,rate:12,stakes:[3770,3850,3930]},
@@ -322,7 +322,7 @@ function roomsStep(dt,G,dir){
   p.doorCd=Math.max(0,(p.doorCd||0)-dt);
   if(G&&still&&p.onGround&&!p.held&&p.doorCd<=0&&!RM.rope.held)for(const d of DOORS){let to=null;
     if(Math.abs(c-d.ax)<10&&Math.abs(f-d.ay)<2)to=[d.bx,d.by];else if(Math.abs(c-d.bx)<10&&Math.abs(f-d.by)<2)to=[d.ax,d.ay];
-    if(to){if(!lantern.held){p.doorCd=.4;sfx('knot');break;}   // 등불 없이는 열리지 않는 문
+    if(to){if(!lantern.held){p.doorCd=.6;p.face=lantern.x+4<c?-1:1;sfx('knot');break;}   // 등불 없이는 열리지 않는 문
       p.x=to[0]-7;p.y=to[1]-p.h;p.vy=0;p.vx=0;p.doorCd=.7;fade=.92;sfx('door');camX=clamp(p.x+7-VW*.42,-180,WORLD_END-VW);
       spirit.x=p.x+60;spirit.y=to[1];spirit.fly=true;const rm=roomAt(p.x);if(rm&&rm.enter)rm.enter();break;}}
   // 뻘배 타기
@@ -828,7 +828,7 @@ function movePX(dx,allowStep){
   for(const s of playerSolids()){
     if(!overlap(p,s))continue;
     const rise=(p.y+p.h)-s.y;
-    if(allowStep&&(p.onGround||p.inWater)&&rise>0&&rise<=(s.type==='body'&&p.sink>0?26:STEP)&&freeAt(p.x,s.y-p.h)){p.y=s.y-p.h;continue;}   // 펄에 빠진 채로도 앞선 몸에는 기어오를 수 있다
+    if(allowStep&&(p.onGround||p.inWater)&&rise>0&&rise<=(p.sink>0?26:STEP)&&freeAt(p.x,s.y-p.h)){p.y=s.y-p.h;continue;}   // 펄에서는 잠기기 전에 닿기만 하면 땅이든 앞선 몸이든 기어오른다
     p.x=dx>0?s.x-p.w:s.x+s.w;
   }
 }
@@ -990,7 +990,7 @@ function twoHands(){return !!((p.climb&&p.climb2)||p.hang||p.wheel||p.ropePull||
 function placeLanternAtCp(){const c=checkpoints[cpi];lantern.x=c.x+(c.lo==null?40:c.lo);lantern.y=c.y-12;lantern.vy=0;lantern.held=false;lantern.inHand=false;lantern.on=null;lantern.slide=false;}
 function lanternHand(){const back=p.pull||(p.anchor!==null&&p.onGround);return{x:p.x+7+(back?-p.face*8:p.face*9)-4,y:p.y+14};}
 function die(cause){
-  for(const o of objs)if(o.type==='body'&&!o.ghost&&!o.keep){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}   // 앞선 몸은 흰 새가 되어 날아간다
+  {const bs=objs.filter(o=>o.type==='body'&&!o.ghost&&!o.keep);for(const o of bs.slice(0,-1)){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}}   // 몸은 둘까지 남는다. 셋째가 쓰러지면 가장 오래된 몸이 흰 새가 되어 날아간다   // 앞선 몸은 흰 새가 되어 날아간다
   p.dead=true;deadT=0;p.held=null;p.pull=null;p.anchor=null;p.caught=false;p.hang=false;p.ropePull=false;p.wheel=false;p.brace=false;p.busy=false;p.riding=false;p.hide=false;p.hoist=false;p.swapW=0;p.moor=false;p.ferryPull=false;deaths++;
   if(cause==='mud'||cause==='drown'||cause==='oyster'||cause==='cargo'){
     const b={type:'body',x:p.x+p.w/2-14,y:cause==='mud'?MUD_BED-22:p.y+p.h-14,w:28,h:14,vy:0,face:p.face,wt:WT[AGE]};
@@ -1029,7 +1029,7 @@ function tick(dt){
     if(!p.dead)hazards();
     if(!p.dead){
       if(lantern.held){const h=lanternHand();lantern.x=h.x;lantern.y=h.y;}
-      else if(!twoHands()&&overlap(p,{x:lantern.x-4,y:lantern.y-4,w:16,h:20})){
+      else if(!twoHands()&&overlap(p,{x:lantern.x-8,y:lantern.y-40,w:24,h:58})){
         if(lantern.inHand){lantern.inHand=false;if(spirit.st==='hidden'){spirit.st='rise';spirit.t=0;sfx('wing');}}
         lantern.held=true;lantern.on=null;lantern.slide=false;sfx('pick');}
       for(let i=0;i<checkpoints.length;i++){const c=checkpoints[i];if(c.ord>cpOrd()&&(lantern.held||lantern.inHand)&&p.x>c.x&&p.x<c.x+900&&p.onGround&&Math.abs(p.y+p.h-c.y)<2)cpi=i;}   // 등불을 들고 지나야 깨어나는 자리가 옮겨진다
@@ -1784,7 +1784,12 @@ function init3D(){
     // 아이
     const alive=!p.dead;hero.g.visible=alive&&!p.hide;
     if(alive){const air=!p.onGround,armOut=lantern.held||!!p.held||!!p.pull||p.climb||p.hang||p.ropePull||p.wheel||p.brace||state==='lamp';
-      poseChild(hero,p.x+7,p.y+28+Math.min(0,0),p.face,p.walkT,p.moving,air,armOut,AGE);}
+      poseChild(hero,p.x+7,p.y+28+Math.min(0,0),p.face,p.walkT,p.moving,air,armOut,AGE);
+      {// 펄에 빠지면 가까운 말뚝이나 앞선 몸 쪽으로 손을 뻗고, 붙잡으면 쥐고 버틴다
+       let st=null,mode=0;const c=p.x+7;
+       if(p.pull){st=p.pull.x;mode=2;}else if(p.anchor!=null&&p.onGround){st=p.anchor;mode=2;}
+       else if(p.sink>0){const cand=STAKE_LIST.slice();for(const o of objs)if(o.type==='body'&&!o.ghost)cand.push(o.x+o.w/2<c?o.x+o.w:o.x);for(const x of cand)if(Math.abs(c-x)<=30&&(st===null||Math.abs(c-x)<Math.abs(c-st)))st=x;if(st!==null)mode=1;}
+       if(mode){const d=(Math.sign(st-c)||p.face)*p.face,near=Math.abs(st-c)<=16;hero.armB.rotation.z=d*(mode===2?1.45:1.8+(near?0:Math.sin(time*9)*.3));}}}
     kidM.g.visible=!!kid&&state!=='end';if(kidM.g.visible)poseChild(kidM,kid.x,300,1,kid.t,kid.moving,false,false,0);
     // 등불
     const lx=lantern.x+4,ly=lantern.y+7,lz=lantern.held?5:2;lanternM.position.set(lx,-ly,lz);flare.position.set(lx,-ly,lz+6);
