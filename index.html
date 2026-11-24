@@ -144,7 +144,7 @@ function mkRoom(id,O,ord,m,r){   // m: 본길 {blockX,blockY,blockW,ax,bx,y}, r:
   const blk={x:m.blockX,y:m.blockY,y0:m.blockY,w:m.blockW||16,h:m.y-m.blockY+200,rock:true,wall:true,boat:!!m.boat};statics.push(blk);BLOCKS.push(blk);
   statics.push({x:O-100,y:-500,w:40,h:1200},{x:O+820,y:-500,w:40,h:1200});
   const ix=r.inX==null?O+40:r.inX,room={id,O,inX:ix,inY:r.inY,outX:r.outX,outY:r.outY};ROOMS.push(room);
-  DOORS.push({ax:m.ax,ay:m.y,bx:ix,by:r.inY},{ax:r.outX,ay:r.outY,bx:m.bx,by:m.y,need:!!r.need});
+  DOORS.push({ax:m.ax,ay:m.y,bx:ix,by:r.inY,entry:true},{ax:r.outX,ay:r.outY,bx:m.bx,by:m.y,any:true});
   const f=m.f||[.3,.6];checkpoints.push({x:ix-10,y:r.inY,ord:ord+f[0],room},{x:m.bx-8,y:m.y,ord:ord+f[1],lo:m.lo==null?40:m.lo});
   return room;
 }
@@ -157,7 +157,7 @@ const O1=14000,O2=15000,O3=16000,O4=17000,O5=18000,O6=19000,O7=20000,O8=21000,O9
 {const r=mkRoom('plug',O2,6,{blockX:3286,blockY:150,ax:3262,bx:3318,y:300,lo:2},{inY:300,outX:O2+740,outY:250});
  statics.push({x:O2-60,y:300,w:210,h:200},{x:O2+150,y:360,w:32,h:200},{x:O2+182,y:300,w:78,h:200},{x:O2+260,y:350,w:160,h:200},{x:O2+420,y:250,w:400,h:300});
  RM.plug={lv:352};RWZ.push({x:O2+150,x2:O2+182,lv:()=>330,rush:()=>!plugged()},{x:O2+260,x2:O2+420,lv:()=>RM.plug.lv<349?RM.plug.lv:null});
- r.init=()=>{RM.plug.lv=352;r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:'crate',x:O2+296,y:342,w:40,h:8,vy:0,wt:1});};}
+ r.init=()=>{RM.plug.lv=352;r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:'crate',x:O2+344,y:342,w:40,h:8,vy:0,wt:1});};}
 function plugged(){return objs.some(o=>o.type==='body'&&!o.ghost&&o.x+14>O2+146&&o.x+14<O2+186&&o.y>300);}
 // 3 등불을 줄로 끌어올리기 (2장, 고풀이 앞)
 {const r=mkRoom('hoist',O3,11,{blockX:5700,blockY:-20,ax:5676,bx:5742,y:140},{inY:300,outX:O3+740,outY:160,need:true});
@@ -261,7 +261,7 @@ function roomsTick(dt){
     if(rider&&p.riding&&o.sink<14.9)o.vx+=clamp(p.rideDir*95-o.vx,-300*dt,300*dt);else o.vx*=Math.pow(.02,dt);
     if(Math.abs(o.vx)>1){const ox=o.x,want=o.vx*dt,oy=o.y;if(o.float)o.y=MUD_TOP-o.h-.01;moveEnt(o,want,0,solidsFor(o).filter(q=>q.type!=='body'));o.y=oy;const dx=o.x-ox;if(rider&&dx)p.x+=dx;if(Math.abs(dx)<Math.abs(want)*.5)o.vx=0;}}
   // 갯골 마개: 몸이 물길을 막으면 옆 웅덩이에 물이 찬다
-  {const q=RM.plug;q.lv=plugged()?Math.max(262,q.lv-12*dt):Math.min(352,q.lv+30*dt);}
+  {const q=RM.plug;q.lv=plugged()?Math.max(301,q.lv-28*dt):Math.min(352,q.lv+30*dt);}
   // 등불 바구니: 위에서 줄을 당기면 올라온다
   {const b=RM.hoist.b,up=alive&&p.hoist;let d=0;if(up)d=Math.max(160-b.y,-55*dt);else if(b.y>160.5&&b.y<297)d=Math.min(297-b.y,30*dt);
    if(d){if(!lantern.held&&onTop(lantern,b))lantern.y+=d;for(const o of objs)if(!o.ghost&&onTop(o,b))o.y+=d;if(alive&&onTop(p,b))p.y+=d;b.y+=d;}}
@@ -320,10 +320,11 @@ function roomsStep(dt,G,dir){
   const f=p.y+p.h,c=p.x+7,still=!inp('left')&&!inp('right');
   // 꿈의 문: 문 앞에 가만히 서서 문고리를 붙잡으면 건너편 문으로 나온다
   p.doorCd=Math.max(0,(p.doorCd||0)-dt);
-  if(G&&still&&p.onGround&&!p.held&&p.doorCd<=0&&!RM.rope.held)for(const d of DOORS){let to=null;
-    if(Math.abs(c-d.ax)<10&&Math.abs(f-d.ay)<2)to=[d.bx,d.by];else if(Math.abs(c-d.bx)<10&&Math.abs(f-d.by)<2)to=[d.ax,d.ay];
-    if(to){if(!lantern.held){p.doorCd=.6;p.face=lantern.x+4<c?-1:1;sfx('knot');break;}   // 등불 없이는 열리지 않는 문
-      p.x=to[0]-7;p.y=to[1]-p.h;p.vy=0;p.vx=0;p.doorCd=.7;fade=.92;sfx('door');camX=clamp(p.x+7-VW*.42,-180,WORLD_END-VW);
+  if(p.doorLock!=null&&Math.abs(c-p.doorLock)>16)p.doorLock=null;
+  if(dir&&p.onGround&&!p.held&&p.doorCd<=0&&p.doorLock==null&&!RM.rope.held)for(const d of DOORS){let to=null;if(SKIPROOMS&&(d.entry||d.any))continue;
+    if(Math.abs(c-d.ax)<5&&Math.abs(f-d.ay)<2&&(dir>0||d.any))to=[d.bx,d.by];else if(Math.abs(c-d.bx)<5&&Math.abs(f-d.by)<2&&dir<0)to=[d.ax,d.ay];   // 들어갈 때는 오른쪽으로, 되돌아갈 때는 왼쪽으로 걸어야 한다 (방에서 나가는 문은 어느 쪽에서 와도 된다)
+    if(to){if(!lantern.held){p.doorCd=.6;sfx('knot');break;}   // 등불 없이는 그냥 문틀일 뿐이다
+      p.x=to[0]-7;p.y=to[1]-p.h;p.vy=0;p.doorLock=to[0];p.doorCd=.3;fade=.8;sfx('door');camX=clamp(p.x+7-VW*.42,-180,WORLD_END-VW);
       spirit.x=p.x+60;spirit.y=to[1];spirit.fly=true;const rm=roomAt(p.x);if(rm&&rm.enter)rm.enter();break;}}
   // 뻘배 타기
   const sl=objs.find(o=>o.type==='sled'&&onTop(p,o));p.riding=!!(sl&&G&&p.onGround);p.rideDir=p.riding?dir:0;if(p.riding&&dir)p.face=dir;
@@ -815,7 +816,7 @@ function sfx(k){
 const solidObjs=()=>objs.filter(o=>!o.ghost);
 function mudFloorP(){const m=mudAt(p.x+7);return m?[{x:m.x,y:MUD_TOP+p.sink,w:m.w,h:40,mud:true}]:[];}
 function playerSolids(){return statics.concat(solidObjs(),dynSolids(),mudFloorP());}
-function solidsFor(o){const a=statics.slice();for(const m of MUDS)if(!m.deep)a.push({x:m.x,y:MUD_BED-8,w:m.w,h:30});for(const q of objs)if(q!==o&&!q.ghost)a.push(q);for(const d of dynSolids())if(!d.noObj)a.push(d);return a;}
+function solidsFor(o){const a=statics.slice();for(const m of MUDS)if(!m.deep)a.push({x:m.x,y:MUD_BED-10,w:m.w,h:30});for(const q of objs)if(q!==o&&!q.ghost)a.push(q);for(const d of dynSolids())if(!d.noObj)a.push(d);return a;}
 function moveEnt(e,dx,dy,sol){
   let hit=false;
   if(dx){e.x+=dx;for(const s of sol){if(s!==e&&overlap(e,s)){e.x=dx>0?s.x-e.w:s.x+s.w;hit=true;}}}
@@ -994,7 +995,7 @@ function die(cause){
   {const bs=objs.filter(o=>o.type==='body'&&!o.ghost&&!o.keep);for(const o of bs.slice(0,-1)){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}}   // 몸은 둘까지 남는다. 셋째가 쓰러지면 가장 오래된 몸이 흰 새가 되어 날아간다   // 앞선 몸은 흰 새가 되어 날아간다
   p.dead=true;deadT=0;p.held=null;p.pull=null;p.anchor=null;p.caught=false;p.hang=false;p.ropePull=false;p.wheel=false;p.brace=false;p.busy=false;p.riding=false;p.hide=false;p.hoist=false;p.swapW=0;p.moor=false;p.ferryPull=false;deaths++;
   if(cause==='mud'||cause==='drown'||cause==='oyster'||cause==='cargo'){
-    const b={type:'body',x:p.x+p.w/2-14,y:cause==='mud'?MUD_BED-22:p.y+p.h-14,w:28,h:14,vy:0,face:p.face,wt:WT[AGE]};
+    const b={type:'body',x:p.x+p.w/2-14,y:cause==="mud"?MUD_BED-24:p.y+p.h-14,w:28,h:14,vy:0,face:p.face,wt:WT[AGE]};
     if(cause==='oyster'){b.bloody=true;b.bt=0;b.seed=(Math.random()*1e9)|0;
       for(let i=0;i<14;i++)blood.push({x:p.x+7+(Math.random()-.5)*8,y:p.y+p.h-4,vx:(Math.random()-.5)*160,vy:-60-Math.random()*160,r:.8+Math.random()*1.2,l:2});}
     for(let k=0;k<2;k++)for(const s of statics)if(!s.hidden&&overlap(b,s)){if(b.x+b.w/2>s.x+s.w/2)b.x=s.x+s.w;else b.x=s.x-b.w;}
@@ -1798,7 +1799,7 @@ function init3D(){
     // 누운 몸과 상자
     let bi=0,ci=0;for(const o of objs){if(o.x>cx+VW+300||o.x+o.w<cx-300)continue;
       if(o.type!=='body'){let m=crates[ci++];if(!m){m=box(1,1,1,M.wood,0,0,0);crates.push(m);}m.visible=true;m.scale.set(o.w,o.h,o.type==='sled'?26:Math.min(o.w,30));m.position.set(o.x+o.w/2,-(o.y+o.h/2),1);}
-      else{let m=bodies[bi++];if(!m){m=mkBody();bodies.push(m);}m.visible=true;const k=AGESC[(o.wt||1)-1]||1;m.scale.setScalar(k);m.position.set(o.x+o.w/2,-(o.y+o.h-(!o.ghost&&o.y>=MUD_TOP&&mudAt(o.x+o.w/2)?9:0)),o.ghost?-3:0);m.rotation.y=(o.face||1)>0?0:Math.PI;m.userData.t.visible=(o.wt||1)<3;}}
+      else{let m=bodies[bi++];if(!m){m=mkBody();bodies.push(m);}m.visible=true;const k=AGESC[(o.wt||1)-1]||1;m.scale.setScalar(k);m.position.set(o.x+o.w/2,-(o.y+o.h-(!o.ghost&&o.y>=MUD_TOP&&mudAt(o.x+o.w/2)?5:0)),o.ghost?-3:0);m.rotation.y=(o.face||1)>0?0:Math.PI;m.userData.t.visible=(o.wt||1)<3;}}
     soulM.forEach((g,i)=>{const q=souls[i];g.visible=!!q;if(q){g.position.set(q.x,-q.y,4);const f=Math.sin(time*16+i)*.7;g.userData.w[0].rotation.x=f;g.userData.w[1].rotation.x=-f;g.scale.setScalar(Math.min(1,q.t*4)*(1-Math.max(0,q.t-1.6)/.6));}});
     for(;bi<bodies.length;bi++)bodies[bi].visible=false;for(;ci<crates.length;ci++)crates[ci].visible=false;
     // 넋, 도깨비불, 짱뚱어
