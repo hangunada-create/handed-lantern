@@ -155,9 +155,9 @@ const O1=14000,O2=15000,O3=16000,O4=17000,O5=18000,O6=19000,O7=20000,O8=21000,O9
  r.init=r.reset=()=>{objs=objs.filter(o=>!(o.type==='sled'&&inRoom(o,r)));objs.push({type:'sled',x:O1+72,y:294,w:34,h:6,vy:0,vx:0,sink:0,wt:1});};}
 // 2 갯골 마개 (1장, 밀물 물골 앞)
 {const r=mkRoom('plug',O2,6,{blockX:3286,blockY:150,ax:3262,bx:3318,y:300,lo:2},{inY:300,outX:O2+740,outY:300});
- statics.push({x:O2-60,y:300,w:210,h:200},{x:O2+150,y:360,w:32,h:200},{x:O2+182,y:300,w:78,h:200},{x:O2+260,y:380,w:160,h:200},{x:O2+260,y:340,w:26,h:60},{x:O2+420,y:300,w:400,h:300});   // 웅덩이는 깊이 80, 왼쪽에만 되올라올 디딤턱이 있다. 건너편 둑은 이쪽과 같은 높이
- RM.plug={lv:382,ch:330};RWZ.push({x:O2+150,x2:O2+182,lv:()=>RM.plug.ch,rush:()=>!plugged()},{x:O2+182,x2:O2+260,lv:()=>RM.plug.ch<302.5?298.6:null},{x:O2+260,x2:O2+420,lv:()=>RM.plug.lv<379?RM.plug.lv:null});   // 막힌 갯골의 물이 둑까지 차올라, 땅 위로 얇게 넘쳐 웅덩이로 흘러든다
- r.init=()=>{RM.plug.lv=382;RM.plug.ch=330;r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:"crate",x:O2+298,y:372,w:92,h:8,vy:0,wt:1});};}
+ statics.push({x:O2-60,y:300,w:210,h:200},{x:O2+150,y:330,w:32,h:200},{x:O2+182,y:300,w:78,h:200},{x:O2+260,y:380,w:160,h:200},{x:O2+260,y:340,w:26,h:60},{x:O2+420,y:300,w:400,h:300});   // 웅덩이는 깊이 80, 왼쪽에만 되올라올 디딤턱이 있다. 건너편 둑은 이쪽과 같은 높이
+ RM.plug={lv:382,ch:316};RWZ.push({x:O2+150,x2:O2+182,lv:()=>RM.plug.ch,rush:()=>!plugged()},{x:O2+182,x2:O2+260,lv:()=>RM.plug.ch<302.5?298.6:null},{x:O2+260,x2:O2+420,lv:()=>RM.plug.lv<379?RM.plug.lv:null});   // 막힌 갯골의 물이 둑까지 차올라, 땅 위로 얇게 넘쳐 웅덩이로 흘러든다
+ r.init=()=>{RM.plug.lv=382;RM.plug.ch=316;r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:"crate",x:O2+298,y:372,w:92,h:8,vy:0,wt:1});};}
 function plugged(){return objs.some(o=>o.type==='body'&&!o.ghost&&o.x+14>O2+146&&o.x+14<O2+186&&o.y>280);}
 // 3 등불을 줄로 끌어올리기 (2장, 고풀이 앞)
 {const r=mkRoom('hoist',O3,11,{blockX:5700,blockY:-20,ax:5676,bx:5742,y:140},{inY:300,outX:O3+740,outY:160,need:true});
@@ -261,8 +261,8 @@ function roomsTick(dt){
     if(rider&&p.riding&&o.sink<14.9)o.vx+=clamp(p.rideDir*95-o.vx,-300*dt,300*dt);else o.vx*=Math.pow(.02,dt);
     if(Math.abs(o.vx)>1){const ox=o.x,want=o.vx*dt,oy=o.y;if(o.float)o.y=MUD_TOP-o.h-.01;moveEnt(o,want,0,solidsFor(o).filter(q=>q.type!=='body'));o.y=oy;const dx=o.x-ox;if(rider&&dx)p.x+=dx;if(Math.abs(dx)<Math.abs(want)*.5)o.vx=0;}}
   // 갯골 마개: 몸이 물길을 막으면 옆 웅덩이에 물이 찬다
-  {const q=RM.plug,pl=plugged();q.ch=pl?Math.max(301,q.ch-45*dt):Math.min(330,q.ch+45*dt);q.lv=pl&&q.ch<302.5?Math.max(301,q.lv-45*dt):Math.min(382,q.lv+30*dt);
-   for(const o of objs)if(o.type==='body'&&!o.ghost&&o.x+14>O2+146&&o.x+14<O2+186&&o.y>280)o.keep=true;}   // 물길을 막고 있는 몸은 날아가지 않는다
+  {const q=RM.plug,pl=plugged();q.ch=pl?Math.max(301,q.ch-45*dt):Math.min(316,q.ch+45*dt);if(!pl&&state==='play'&&!p.dead&&p.x+7>O2+150&&p.x+7<O2+182&&p.y+p.h>321)die('drown');q.lv=pl&&q.ch<302.5?Math.max(301,q.lv-45*dt):Math.min(382,q.lv+30*dt);
+   for(const o of objs)if(o.type==='body'&&!o.ghost&&o.x+14>O2+146&&o.x+14<O2+186&&o.y>280){o.keep=true;o.nofloat=true;}}   // 물길을 막고 있는 몸은 날아가지 않는다
   // 등불 바구니: 위에서 줄을 당기면 올라온다
   {const b=RM.hoist.b,up=alive&&p.hoist;let d=0;if(up)d=Math.max(160-b.y,-55*dt);else if(b.y>160.5&&b.y<297)d=Math.min(297-b.y,30*dt);
    if(d){if(!lantern.held&&onTop(lantern,b))lantern.y+=d;for(const o of objs)if(!o.ghost&&onTop(o,b))o.y+=d;if(alive&&onTop(p,b))p.y+=d;b.y+=d;}}
@@ -911,14 +911,14 @@ function spiritTick(dt){
   if(s.st==='rise'){s.t+=dt;s.a=Math.min(1,s.t/.4);s.fly=true;s.alt+=(24-s.alt)*Math.min(1,dt*5);if(s.t>.5){s.st='walk';s.wi=0;}return;}
   const rmS=state==='play'&&p.x>ANNEX?roomAt(p.x):null;
   if(state==='play'&&!p.dead&&!rmS){while(s.wi<WAITS.length-2&&p.x+7>WAITS[s.wi]-50)s.wi++;}
-  const play=state==='play';let goal=play?Math.min(Math.max(p.x+190,s.x),WAITS[s.wi]):(curEnd().x+500);if(rmS)goal=Math.min(Math.max(p.x+190,s.x),rmS.outX-40);
+  const play=state==='play';if(play){if(s.dest==null||s.dest<s.x||s.dest>s.x+700)s.dest=s.x;if(p.x+7>s.x-95||(s.fly&&s.dest>s.x+1))s.dest=Math.max(s.dest,p.x+290);}let goal=play?Math.min(Math.max(s.dest,s.x),WAITS[s.wi]):(curEnd().x+500);if(rmS)goal=Math.min(Math.max(s.dest,s.x),rmS.outX-40);
   if(play&&goal>10548&&goal<11095)goal=p.x>10925?11095:Math.max(s.x,10548);   // 넋은 헛배의 불빛 아래에 머물지 않는다
   const d=goal-s.x;
   let top=MUD_TOP;for(const q of statics)if(!q.hidden&&q.h<700&&s.x>=q.x&&s.x<q.x+q.w&&q.y<top)top=q.y;
   {const sw=waterAt(s.x);if(sw!==null)top=Math.min(top,sw-1);}
-  if(!play||d>110||Math.abs(top-s.y)>5)s.fly=true;else if(d<=1)s.fly=false;
+  if(!play||d>1||Math.abs(top-s.y)>5)s.fly=true;else s.fly=false;
   const wary=s.x>=LOWD.x-10&&s.x<LOWD.x2&&tideLv()<314;if(wary)s.fly=true;   // 넋은 물이 들 자리에는 앉지 않는다
-  s.moving=d>1;{const v=d>0?(play?(s.fly?Math.min(320,70+d*2.6):60):70):0;s.sp=(s.sp||0)+(v-(s.sp||0))*Math.min(1,dt*(play?5:60));if(d>0)s.x+=Math.min(d,Math.max(play?40:70,s.sp)*dt);}s.t+=dt;
+  s.moving=d>1;if(d>0)s.x+=Math.min(d,(play?300:70)*dt);s.t+=dt;
   s.y+=(top-s.y)*Math.min(1,dt*6);s.alt+=((s.fly?(wary?58:22):0)-s.alt)*Math.min(1,dt*5);
   if(!play&&d<140)s.a=Math.max(0,s.a-dt*.5);
 }
@@ -954,7 +954,7 @@ function worldTick(dt){
     o.vy=Math.min(o.vy+GRAV*dt,900);if(moveEnt(o,0,o.vy*dt,solidsFor(o)))o.vy=0;
     // 물에 뜨는 몸: 물이 차면 쓰러진 그 자리에서 떠오른다
     const wl=waterAt(o.x+o.w/2);
-    if(wl!==null&&!o.sinks&&o.y+Math.max(o.h,14)>wl+5){const ty=wl-(o.x>=SARI.x-20&&o.x<SARI.x2&&flowOn()?-6:9);const ny=Math.max(ty,o.y-70*dt);const before=o.y;moveEnt(o,0,ny-o.y,solidsFor(o));if(o.y<before)o.vy=0;}
+    if(wl!==null&&!o.sinks&&!o.nofloat&&o.y+Math.max(o.h,14)>wl+5){const ty=wl-(o.x>=SARI.x-20&&o.x<SARI.x2&&flowOn()?-6:9);const ny=Math.max(ty,o.y-70*dt);const before=o.y;moveEnt(o,0,ny-o.y,solidsFor(o));if(o.y<before)o.vy=0;}
   }
   objs=objs.filter(o=>o.y<700);
   if(!lantern.held&&lantern.on){const c=lantern.on;lantern.x=c.x+c.w/2-4;lantern.y=c.y+c.h-6;lantern.vy=0;}                 // 닻 갈고리에 걸린 등불은 닻줄과 함께 흔들린다
@@ -1693,6 +1693,7 @@ function init3D(){
   for(const d of RDECO)gbox(d.x,d.y,d.w,d.h,d.z||0,d.d||40,RMAT[d.mat]||M.wood);
   const rdynM=RDYN.map(d=>box(d.w,d.h,d.noObj?64:(d.d||34),RMAT[d.mat]||M.wood,0,0,0));
   for(const z of RWZ){z.m=add(new T.BoxGeometry(z.x2-z.x,1,208),M.water,(z.x+z.x2)/2,0,-45,null,true);z.m.receiveShadow=true;zones.push(z);}
+  const plugV=new T.Group();{const wm=new T.MeshBasicMaterial({color:0x8fd0d2,transparent:true,opacity:.78});const pour=add(new T.BoxGeometry(30,130,2.4),wm,O2+166,0,60.4,plugV,true);const st=[];for(let i=0;i<6;i++)st.push(add(new T.BoxGeometry(1.6,14,.6),M.white,O2+154+i*4.6,0,62,plugV,true));const fl=[];for(let i=0;i<5;i++)fl.push(add(new T.BoxGeometry(1.2,.5,12),M.white,O2+155+i*5.5,0,0,plugV,true));plugV.userData={pour,st,fl,k:1};sc.add(plugV);}
   const rclM=RCLIMB.map(c=>{if(c.hz)return new T.Group();if(c.net)return add(new T.PlaneGeometry(c.w,c.h,3,14),M.net,0,0,4,null,true);const g=new T.Group();box(1.8,c.h+(c.chain?560:0),1.8,c.chain?M.steel:M.white,0,c.chain?280:0,0,g);if(c.chain){const a=add(new T.TorusGeometry(8,1.8,5,8,Math.PI),M.steel,0,-c.h/2+2,0,g);a.rotation.z=Math.PI;box(20,2.4,2.4,M.steel,0,-c.h/2+12,0,g);}sc.add(g);return g;});
   const rropeM=RROPE.map(()=>seg(M.white,1.2));
   const rwhM=RWHEEL.map(w=>{const m=add(new T.TorusGeometry(9,1.6,5,10),M.steel,w.x,-w.y,-8);for(let i=0;i<2;i++)box(18,1.4,1.4,M.steel,0,0,0,m).rotation.z=i*Math.PI/2;fixSeg(M.steel,2.4,w.x,w.y+18,w.x,w.y+9,-8);return m;});
@@ -1730,7 +1731,7 @@ function init3D(){
   function mkBody(){const g=new T.Group();add(jit(new T.BoxGeometry(20,8,10),.8),M.navy,2,4,0,g);add(new T.IcosahedronGeometry(4,1),M.skin,-10.6,4.4,0,g);const t=new T.Group();add(new T.CylinderGeometry(4.3,4.3,3,7),M.white,-12.6,4.6,0,t).rotation.z=Math.PI/2;box(2,1.2,5,M.white,-16,1,2,t);g.add(t);g.userData.t=t;sc.add(g);return g;}
   const bird=new T.Group(),bw=[];{add(jit(new T.IcosahedronGeometry(6.4,0),1),M.bird,0,17,0,bird).scale.set(1.5,.8,.85);const n=add(new T.CylinderGeometry(.9,1.3,14,5),M.bird,8.6,25,0,bird);n.rotation.z=-.4;add(new T.IcosahedronGeometry(2.5,0),M.bird,11.4,32,0,bird);const bk=add(new T.ConeGeometry(.9,8,4),M.orange,16.4,31.6,0,bird);bk.rotation.z=-Math.PI/2;
     add(new T.ConeGeometry(3,10,4),M.bird,-11,16.4,0,bird).rotation.z=Math.PI/2+.25;add(new T.ConeGeometry(.5,6,4),M.bird,11.6,35.4,0,bird).rotation.z=.9;
-    const legG=new T.Group();legG.position.set(.8,13,0);bird.add(legG);bird.userData.legs=legG;for(const dz of [-1.4,1.4]){box(.7,7,.7,M.dark,0,-3.4,dz,legG).rotation.z=-.25;box(.7,7,.7,M.dark,-.2,-9.6,dz,legG).rotation.z=.2;box(3,.6,.7,M.dark,.8,-12.7,dz,legG);}for(const d of [-1,1]){const w=new T.Group();w.position.set(-1,19,d*4);box(11,1,10,M.bird,0,0,d*5,w);const w2=new T.Group();w2.position.set(-.5,0,d*10);box(8,.8,11,M.bird,-1,0,d*5.5,w2);w.add(w2);bird.add(w);bw.push([w,d,w2]);}sc.add(bird);}
+    for(const dz of [-1.4,1.4]){box(.7,7,.7,M.dark,.8,9.6,dz,bird).rotation.z=-.25;box(.7,7,.7,M.dark,.6,3.4,dz,bird).rotation.z=.2;box(3,.6,.7,M.dark,1.6,.3,dz,bird);}for(const d of [-1,1]){const w=new T.Group();w.position.set(-1,19,d*4);box(9,1,12,M.bird,0,0,d*6,w);bird.add(w);bw.push([w,d]);}sc.add(bird);}
   const wispM=add(new T.IcosahedronGeometry(7,0),M.teal,0,0,6,null,true);
   const fishM=[0,1,2,3,4].map(()=>{const g=new T.Group();add(new T.BoxGeometry(12,4,4),M.shell,0,2,0,g);add(new T.SphereGeometry(1.3,5,4),M.white,4.4,4.2,1.6,g);g.position.z=14;sc.add(g);return g;});
   // 2장: 포구
@@ -1785,6 +1786,7 @@ function init3D(){
     sunM.position.set(tx+1900,-250-nk*700+dawn*0,-7400);sunM.material.opacity=1-dawn;sunM.visible=nk<.9;
     duskG.position.x=dawnG.position.x=tx;duskG.material.opacity=(.5-.3*nk)*(1-dawn);dawnG.material.opacity=dawn;
     // 물
+    {const u=plugV.userData,pl=plugged(),lv=RM.plug.ch;u.k+=((pl?0:1)-u.k)*.06;u.pour.visible=u.k>.04;u.pour.scale.x=u.k;u.pour.position.y=-(lv+65);u.st.forEach((m,i)=>{m.position.y=-(lv+8+((time*210+i*37)%110));m.visible=u.k>.5;});u.fl.forEach((m,i)=>{m.position.y=-lv+.7;m.position.z=-60+((time*150+i*47)%118);m.visible=u.k>.5;});}
     for(const z of zones){const lv=z.lv();z.m.visible=lv!==null&&z.x2>cx-400&&z.x<cx+VW+400;if(z.m.visible){z.m.scale.y=480-lv;z.m.position.y=-(lv+480)/2;}}
     // 아이
     const alive=!p.dead;hero.g.visible=alive&&!p.hide;
@@ -1803,11 +1805,11 @@ function init3D(){
     // 누운 몸과 상자
     let bi=0,ci=0;for(const o of objs){if(o.x>cx+VW+300||o.x+o.w<cx-300)continue;
       if(o.type!=='body'){let m=crates[ci++];if(!m){m=box(1,1,1,M.wood,0,0,0);crates.push(m);}m.visible=true;m.scale.set(o.w,o.h,o.type==='sled'?26:Math.min(o.w,30));m.position.set(o.x+o.w/2,-(o.y+o.h/2),1);}
-      else{let m=bodies[bi++];if(!m){m=mkBody();bodies.push(m);}m.visible=true;const k=AGESC[(o.wt||1)-1]||1;m.scale.setScalar(k);m.position.set(o.x+o.w/2,-(o.y+o.h-(!o.ghost&&o.y>=MUD_TOP&&mudAt(o.x+o.w/2)?5:0)),o.ghost?-3:0);m.rotation.y=(o.face||1)>0?0:Math.PI;m.userData.t.visible=(o.wt||1)<3;}}
+      else{let m=bodies[bi++];if(!m){m=mkBody();bodies.push(m);}m.visible=true;const k=AGESC[(o.wt||1)-1]||1;m.scale.setScalar(k);m.position.set(o.x+o.w/2,-(o.y+o.h-(!o.ghost&&o.y>=MUD_TOP&&mudAt(o.x+o.w/2)?5:0)),o.nofloat?(o.pz=Math.min(48,(o.pz||0)+1.4)):(o.ghost?-3:0));m.rotation.y=(o.face||1)>0?0:Math.PI;m.userData.t.visible=(o.wt||1)<3;}}
     soulM.forEach((g,i)=>{const q=souls[i];g.visible=!!q;if(q){g.position.set(q.x,-q.y,4);const f=Math.sin(time*16+i)*.7;g.userData.w[0].rotation.x=f;g.userData.w[1].rotation.x=-f;g.scale.setScalar(Math.min(1,q.t*4)*(1-Math.max(0,q.t-1.6)/.6));}});
     for(;bi<bodies.length;bi++)bodies[bi].visible=false;for(;ci<crates.length;ci++)crates[ci].visible=false;
     // 넋, 도깨비불, 짱뚱어
-    const s=spirit;bird.visible=s.st!=='hidden'&&s.a>.03;if(bird.visible){const fly=s.alt>4;const k=Math.min(1,s.alt/18),sp=Math.min(1,(s.sp||0)/300),ph=time*(11+3*sp),amp=(.62+.25*Math.sin(time*1.7))*(1-.35*sp);const bob=fly?(-Math.cos(ph)*2.2+Math.sin(time*1.3)*3*k):0;bird.position.set(s.x,-(s.y-s.alt)+bob,-10);bird.rotation.y=s.back?Math.PI:0;M.bird.opacity=s.a;for(const [w,d,w2] of bw){w.rotation.x=fly?d*(Math.sin(ph)*amp+.18):d*1.35;w2.rotation.x=fly?d*(Math.sin(ph-1)*.55-.1):d*.25;}const rising=s.fly?1-k:0;bird.rotation.z=fly?(-.3*sp+.4*rising+Math.cos(ph)*.04):0;bird.userData.legs.rotation.z=-1.3*k*(s.fly?1:.5);
+    const s=spirit;bird.visible=s.st!=='hidden'&&s.a>.03;if(bird.visible){const fly=s.alt>4;bird.position.set(s.x,-(s.y-s.alt)-(fly?0:0),-10);bird.rotation.y=s.back?Math.PI:0;M.bird.opacity=s.a;for(const [w,d] of bw)w.rotation.x=fly?d*Math.sin(time*10)*.9:d*1.35;bird.rotation.z=fly?-.25:0;
       spL.position.set(s.x,-(s.y-s.alt)+18,14);spL.intensity=900*s.a;}else spL.intensity=0;
     wispM.visible=wisp.a>.02;if(wispM.visible){wispM.position.set(wisp.x,-(wisp.y-16),6);wispM.rotation.y=time*2;wispM.scale.setScalar(.7+.3*wisp.a);}wispL.position.set(wisp.x,-(wisp.y-16),20);wispL.intensity=2600*wisp.a;
     fish.amb.forEach((f,i)=>{const m=fishM[i];m.visible=f.st==='sit';m.position.x=f.x;m.position.y=-300+(f.hop>0?3:0);});
