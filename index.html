@@ -91,7 +91,7 @@ const statics=[
   {x:5100,y:210,w:300,h:290,rock:true},                    // 덕장 둑 (높이 90)
   {x:5404,y:260,w:112,h:14,prop:true},                     // 묶인 배
   {x:5540,y:140,w:460,h:360,rock:true},                    // 방파제
-  {x:6700,y:250,w:22,h:250,rock:true},{x:6774,y:250,w:18,h:250,rock:true},   // 잔교
+  {x:6630,y:250,w:92,h:250,rock:true},{x:6774,y:250,w:18,h:250,rock:true},   // 잔교
   {x:6722,y:254,w:52,h:246,rock:true},{x:6792,y:254,w:28,h:246,rock:true},   // 그물 자리 밑
   {x:6820,y:150,w:880,h:350,rock:true},                    // 큰 배
   // ===== 3장: 방조제와 물때 =====
@@ -129,7 +129,7 @@ const FATHER={x:190};                          // 그물을 덮어쓴 몸
 const BUOY={x:1905};                           // 아버지 배의 표식이 새겨진 부표
 const GATBAWI=[{x:4350,h:74,w:26,tilt:0},{x:4350,h:52,w:20,tilt:.35}]; // 아버지 바위, 아들 바위
 const checkpoints=[{x:30,y:300},{x:940,y:300},{x:1250,y:300},{x:1556,y:300},{x:2050,y:300},{x:2500,y:300},{x:3210,y:300},{x:3552,y:300},{x:3672,y:258},
-  {x:4730,y:300},{x:5120,y:210},{x:5560,y:140},{x:5940,y:140},{x:6703,y:250},{x:6840,y:150},
+  {x:4730,y:300},{x:5120,y:210},{x:5560,y:140},{x:5940,y:140},{x:6645,y:250},{x:6840,y:150},
   {x:7720,y:210},{x:8150,y:250},{x:8540,y:250},{x:8960,y:250}, {x:9620,y:250},{x:9984,y:250},{x:10506,y:250},{x:11110,y:262}, {x:11930,y:250},{x:12310,y:178},{x:12408,y:60}];
 const DOORS=[{ax:12244,ay:250,bx:12332,by:178}];   // 꿈의 문: 들어가면 다른 문으로 나온다. 상자와 몸도 지나간다
 /* ===== 꿈의 방: 길을 막은 바위 앞의 문으로 들어가면 다른 곳의 문으로 나온다. 방마다 퍼즐 하나 (design/puzzles.md) ===== */
@@ -378,7 +378,7 @@ const FARBODY=1905;
 let chLevel=350,chT=-1;
 function tideLevel(){return chLevel;}
 let t2Level=330,t2T=-1;
-function waterAt(x){if(x>ANNEX){for(const z of RWZ)if(x>=z.x&&x<z.x2)return z.lv();return null;}if(x>=BASIN2.x&&x<BASIN2.x2&&t2Level<BASIN2.low)return t2Level;if(x>=CHANNEL.x&&x<CHANNEL.x2&&chLevel<CHANNEL.floor)return chLevel;if(x>=SEA_X&&x<4700)return 298;if((x>=5400&&x<5540)||(x>=6000&&x<6700))return HARBOR_WL;
+function waterAt(x){if(x>ANNEX){for(const z of RWZ)if(x>=z.x&&x<z.x2)return z.lv();return null;}if(x>=BASIN2.x&&x<BASIN2.x2&&t2Level<BASIN2.low)return t2Level;if(x>=CHANNEL.x&&x<CHANNEL.x2&&chLevel<CHANNEL.floor)return chLevel;if(x>=SEA_X&&x<4700)return 298;if((x>=5400&&x<5540)||(x>=6000&&x<6630))return HARBOR_WL;
   if(x>=7900&&x<12000){const t=tideLv();if(x>=POOL.x&&x<POOL.x2)return t<POOL.floor?t:null;if(x>=LOWD.x&&x<LOWD.x2)return t<LOWD.floor?t:null;if(x>=SARI.x&&x<SARI.x2)return SARI.wl;if(x>=SEA4.x&&x<SEA4.x2)return SEA4.wl;}
   return null;}
 function mudAt(x){for(const m of MUDS)if(x>=m.x&&x<m.x+m.w)return m;return null;}
@@ -390,7 +390,7 @@ const BOATD={x:5404,w:112,y:260};                    // 묶인 배의 갑판
 const NETR={x:5514,w:20,top:98};                     // 방파제에서 늘어지는 투망
 const DAVX=NETR.x+52,HOOKX=NETR.x+10,THROWX=BOATD.x+56;
 const KPOST=5900,KEDGE=6000;                         // 고풀이 기둥과 방파제 끝
-const RAFT_DOCK=6004,RAFT_MAX=6610,RAFT_OUT=6240,KFAR={x:6356,y:216};   // KFAR: 떼배 너머 물속 말뚝. 흰 줄이 이 말뚝을 돌아 떼배에 매여, 물살에 밀려오려는 떼배를 붙들고 있다
+const RAFT_DOCK=6004,RAFT_MAX=6540,RAFT_OUT=6240,KFAR={x:6356,y:216};   // KFAR: 떼배 너머 물속 말뚝. 흰 줄이 이 말뚝을 돌아 떼배에 매여, 물살에 밀려오려는 떼배를 붙들고 있다
 const CRB={x:6722,w:52},CRA={x:6792,w:28},CR_LOW=250,CR_HIGH=150;   // 도르래로 이어진 두 그물
 const ENDS=[{x:4160,next:9},{x:7250,next:15},{x:9330,next:19,age:2},{x:1e9,next:null}];     // 장의 끝과 다음 장의 첫 체크포인트
 const DRAGA=[90,120,160],JVA=[410,430,410],MUDK=[1,1.6,2.6],WT=[1,2,3],AGESC=[1,1.2,1.4];  // 아이, 소년, 어른
@@ -488,8 +488,8 @@ function drawCh2(lo,hi){
       for(let i=knot.n;i<7;i++){const x=KPOST+14+i*11;ctx.beginPath();ctx.arc(x,135.6,2.6,0,Math.PI*2);ctx.stroke();}}
     if(knot.done){ctx.strokeStyle='rgba(244,236,216,.8)';ctx.lineWidth=1.6;ctx.beginPath();for(let x=KEDGE+30;x<KEDGE+330;x+=6){const y=HARBOR_WL+1+Math.sin(x*.05+time)*1.2;x===KEDGE+30?ctx.moveTo(x+time*4%6,y):ctx.lineTo(x+time*4%6,y);}ctx.stroke();}}
   // 부표 줄과 떼배
-  if(hi>5980&&lo<6720){ctx.strokeStyle=CH_INK;ctx.lineWidth=2.4;seg(6712,250,6712,226);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(KEDGE,150);for(let x=KEDGE;x<=6712;x+=24)ctx.lineTo(x,232+Math.sin(x*.03+time*.8)*1.5+(x<6030?(6030-x)*-2.6:0));ctx.stroke();
-    for(let x=6070;x<6700;x+=90){const y=232+Math.sin(x*.03+time*.8)*1.5;haloFill(()=>{ctx.beginPath();ctx.ellipse(x,y+3,4,3,0,0,Math.PI*2);},1.2,C_ORANGE);}
+  if(hi>5980&&lo<6720){ctx.strokeStyle=CH_INK;ctx.lineWidth=2.4;seg(6652,250,6652,226);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(KEDGE,150);for(let x=KEDGE;x<=6652;x+=24)ctx.lineTo(x,232+Math.sin(x*.03+time*.8)*1.5+(x<6030?(6030-x)*-2.6:0));ctx.stroke();
+    for(let x=6070;x<6600;x+=90){const y=232+Math.sin(x*.03+time*.8)*1.5;haloFill(()=>{ctx.beginPath();ctx.ellipse(x,y+3,4,3,0,0,Math.PI*2);},1.2,C_ORANGE);}
     const r=raft;haloFill(()=>{ctx.beginPath();ctx.rect(r.x,r.y,r.w,5);for(let i=0;i<5;i++)ctx.rect(r.x+4+i*18,r.y+4,12,6);},1.6,C_WOOD);
     ctx.strokeStyle='rgba(236,228,206,.5)';ctx.lineWidth=.6;for(let i=1;i<6;i++)seg(r.x+i*15,r.y+1,r.x+i*15,r.y+4);
     if(p.ropePull&&!p.dead){ctx.strokeStyle=K;ctx.lineWidth=1;seg(p.x+7,p.y+8,p.x+2,233);}}
@@ -1544,7 +1544,7 @@ function render(){
   if(t2Level<BASIN2.low-1&&BASIN2.x2>lo&&BASIN2.x<hi)drawWater({x:BASIN2.x,x2:BASIN2.x2,floor:326},t2Level,t2T>2&&t2Level>BASIN2.full+.5);
   if(hi>SEA_X&&lo<4700)drawWater({x:SEA_X,x2:4700,floor:420},298,false);
   if(hi>5400&&lo<5540)drawWater({x:5400,x2:5540,floor:420},HARBOR_WL,false);
-  if(hi>6000&&lo<6700)drawWater({x:6000,x2:6700,floor:420},HARBOR_WL,false);
+  if(hi>6000&&lo<6630)drawWater({x:6000,x2:6630,floor:420},HARBOR_WL,false);
   if(hi>7900&&lo<9000){const t=tideLv();
     if(t<POOL.floor-1)drawWater(POOL,t,false);if(t<LOWD.floor-1)drawWater(LOWD,t,false);
     drawWater({x:SARI.x,x2:SARI.x2,floor:420},SARI.wl,flowOn());}
@@ -1681,7 +1681,7 @@ function init3D(){
   {const a=add(new T.PlaneGeometry(6000,6200,1,1).rotateX(-Math.PI/2),M.sea,1700,-301.5,-3250,null,true);a.receiveShadow=true;const b=add(new T.PlaneGeometry(10000,6200,1,1).rotateX(-Math.PI/2),M.sea,9700,-270,-3250,null,true);b.receiveShadow=true;
    const wm=new T.MeshBasicMaterial({color:0x2f6a74});for(let i=0;i<260;i++)add(new T.BoxGeometry(20+r()*70,.6,2.4),wm,-600+r()*14000,-268.6-(r()<.25?31:0),-200-r()*r()*3600,null,true);}
   const zones=[{x:CHANNEL.x,x2:CHANNEL.x2,lv:()=>chLevel<CHANNEL.floor?chLevel:null},{x:BASIN2.x,x2:BASIN2.x2,lv:()=>t2Level<BASIN2.low-1?t2Level:null},{x:SEA_X,x2:4700,lv:()=>298},
-    {x:5400,x2:5540,lv:()=>HARBOR_WL},{x:6000,x2:6700,lv:()=>HARBOR_WL},{x:POOL.x,x2:POOL.x2,lv:()=>tideLv()<POOL.floor-1?tideLv():null},{x:LOWD.x,x2:LOWD.x2,lv:()=>tideLv()<LOWD.floor-1?tideLv():null},
+    {x:5400,x2:5540,lv:()=>HARBOR_WL},{x:6000,x2:6630,lv:()=>HARBOR_WL},{x:POOL.x,x2:POOL.x2,lv:()=>tideLv()<POOL.floor-1?tideLv():null},{x:LOWD.x,x2:LOWD.x2,lv:()=>tideLv()<LOWD.floor-1?tideLv():null},
     {x:SARI.x,x2:SARI.x2,lv:()=>SARI.wl},{x:SEA4.x,x2:SEA4.x2,lv:()=>SEA4.wl}];
   for(const z of zones){z.m=add(new T.BoxGeometry(z.x2-z.x,1,208),M.water,(z.x+z.x2)/2,0,-45,null,true);z.m.receiveShadow=true;}
   // 먼 풍경: 유달산, 목포대교, 섬들
@@ -1767,7 +1767,7 @@ function init3D(){
   gbox(KPOST-5,116,10,24,-6,10,M.wood);const knotS=[];for(let i=0;i<7;i++)knotS.push(add(new T.SphereGeometry(2.6,6,5),M.white,KPOST+14+i*11,-136,-4,null,true));
   const ropeA=fixSeg(M.white,1.6,KPOST,126,KEDGE,138.5,-4),ropeB=seg(M.white,1.6),ropeC=seg(M.white,1.4),ropeD=seg(M.white,1.4);fixSeg(M.wood,5,KFAR.x,300,KFAR.x,KFAR.y-6,-4);
   const raftM=box(90,6,36,M.wood,0,0,0);for(let i=0;i<5;i++)box(12,6,30,M.wood,-36+i*18,-5,0,raftM);
-  fixSeg(M.white,1.3,KEDGE,150,6030,232,-5);fixSeg(M.white,1.3,6030,232,6712,232,-5);for(let x=6070;x<6700;x+=90)add(new T.SphereGeometry(4,6,5),M.orange,x,-235,-5);fixSeg(M.wood,3,6712,250,6712,226,-16);const pullLine=seg(M.dark,.9);
+  fixSeg(M.white,1.3,KEDGE,150,6030,232,-5);fixSeg(M.white,1.3,6030,232,6652,232,-5);for(let x=6070;x<6600;x+=90)add(new T.SphereGeometry(4,6,5),M.orange,x,-235,-5);fixSeg(M.wood,3,6652,250,6652,226,-16);const pullLine=seg(M.dark,.9);
   fixSeg(M.wood,4.4,6838,150,6838,85,-14);fixSeg(M.wood,4.4,6838,86,6742,86,-14);
   const cargoBag=add(new T.SphereGeometry(1,8,6),M.net,0,0,0,null,true);cargoBag.visible=false;
   const loadB=new T.Group();{add(jit(new T.IcosahedronGeometry(9,0),1.5),M.wood,0,0,0,loadB).scale.set(1.5,1,1.2);const n=add(new T.SphereGeometry(10.5,8,6),M.net,0,0,0,loadB,true);n.scale.set(1.5,1,1.2);sc.add(loadB);}
