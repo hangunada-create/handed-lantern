@@ -156,9 +156,9 @@ const O1=14000,O2=15000,O3=16000,O4=17000,O5=18000,O6=19000,O7=20000,O8=21000,O9
 // 2 갯골 마개 (1장, 밀물 물골 앞)
 {const r=mkRoom('plug',O2,6,{blockX:3286,blockY:150,ax:3262,bx:3318,y:300,lo:2},{inY:300,outX:O2+740,outY:250});
  statics.push({x:O2-60,y:300,w:210,h:200},{x:O2+150,y:360,w:32,h:200},{x:O2+182,y:300,w:78,h:200},{x:O2+260,y:350,w:160,h:200},{x:O2+420,y:250,w:400,h:300});
- RM.plug={lv:352};RWZ.push({x:O2+150,x2:O2+182,lv:()=>330,rush:()=>!plugged()},{x:O2+260,x2:O2+420,lv:()=>RM.plug.lv<349?RM.plug.lv:null});
- r.init=()=>{RM.plug.lv=352;r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:'crate',x:O2+344,y:342,w:40,h:8,vy:0,wt:1});};}
-function plugged(){return objs.some(o=>o.type==='body'&&!o.ghost&&o.x+14>O2+146&&o.x+14<O2+186&&o.y>300);}
+ RM.plug={lv:352,ch:330};RWZ.push({x:O2+150,x2:O2+182,lv:()=>RM.plug.ch,rush:()=>!plugged()},{x:O2+182,x2:O2+260,lv:()=>RM.plug.ch<302.5?298.6:null},{x:O2+260,x2:O2+420,lv:()=>RM.plug.lv<349?RM.plug.lv:null});   // 막힌 갯골의 물이 둑까지 차올라, 땅 위로 얇게 넘쳐 웅덩이로 흘러든다
+ r.init=()=>{RM.plug.lv=352;RM.plug.ch=330;r.reset();};r.reset=()=>{if(!objs.some(o=>o.type==='crate'&&inRoom(o,r)))objs.push({type:'crate',x:O2+344,y:342,w:40,h:8,vy:0,wt:1});};}
+function plugged(){return objs.some(o=>o.type==='body'&&!o.ghost&&o.x+14>O2+146&&o.x+14<O2+186&&o.y>280);}
 // 3 등불을 줄로 끌어올리기 (2장, 고풀이 앞)
 {const r=mkRoom('hoist',O3,11,{blockX:5700,blockY:-20,ax:5676,bx:5742,y:140},{inY:300,outX:O3+740,outY:160,need:true});
  statics.push({x:O3-60,y:300,w:362,h:200},{x:O3+302,y:160,w:518,h:340,rock:true});
@@ -261,7 +261,7 @@ function roomsTick(dt){
     if(rider&&p.riding&&o.sink<14.9)o.vx+=clamp(p.rideDir*95-o.vx,-300*dt,300*dt);else o.vx*=Math.pow(.02,dt);
     if(Math.abs(o.vx)>1){const ox=o.x,want=o.vx*dt,oy=o.y;if(o.float)o.y=MUD_TOP-o.h-.01;moveEnt(o,want,0,solidsFor(o).filter(q=>q.type!=='body'));o.y=oy;const dx=o.x-ox;if(rider&&dx)p.x+=dx;if(Math.abs(dx)<Math.abs(want)*.5)o.vx=0;}}
   // 갯골 마개: 몸이 물길을 막으면 옆 웅덩이에 물이 찬다
-  {const q=RM.plug;q.lv=plugged()?Math.max(301,q.lv-28*dt):Math.min(352,q.lv+30*dt);}
+  {const q=RM.plug,pl=plugged();q.ch=pl?Math.max(301,q.ch-45*dt):Math.min(330,q.ch+45*dt);q.lv=pl&&q.ch<302.5?Math.max(301,q.lv-34*dt):Math.min(352,q.lv+30*dt);}
   // 등불 바구니: 위에서 줄을 당기면 올라온다
   {const b=RM.hoist.b,up=alive&&p.hoist;let d=0;if(up)d=Math.max(160-b.y,-55*dt);else if(b.y>160.5&&b.y<297)d=Math.min(297-b.y,30*dt);
    if(d){if(!lantern.held&&onTop(lantern,b))lantern.y+=d;for(const o of objs)if(!o.ghost&&onTop(o,b))o.y+=d;if(alive&&onTop(p,b))p.y+=d;b.y+=d;}}
