@@ -66,10 +66,10 @@ const statics=[
   {x:860,y:332,w:70,h:200},{x:930,y:300,w:130,h:200},   // 갯고랑 3
   // 2. 첫 펄 (2a 말뚝 펄, 2b 넓은 펄)
   {x:1060,y:324,w:180,h:200},{x:1240,y:300,w:80,h:200},
-  {x:1320,y:324,w:232,h:200},{x:1552,y:300,w:128,h:200},
+  {x:1320,y:324,w:232,h:200},{x:1552,y:300,w:160,h:200},
   // 3. 짱뚱어 펄 (아주 넓은 펄, 속에 단단한 땅)
-  {x:1680,y:324,w:360,h:200},
-  {x:1730,y:300,w:24,h:24,hidden:true},{x:1832,y:300,w:24,h:24,hidden:true},{x:1886,y:300,w:24,h:24,hidden:true},{x:1976,y:300,w:24,h:24,hidden:true},
+  {x:1712,y:324,w:328,h:200},
+  {x:1740,y:300,w:24,h:24,hidden:true},{x:1800,y:300,w:24,h:24,hidden:true},{x:1974,y:300,w:24,h:24,hidden:true},   // 둘째와 셋째 사이(150)는 뛰어서 못 건넌다. 몸 하나가 디딤돌이 된다
   {x:2040,y:300,w:80,h:200},
   // 4. 갯바위와 굴밭
   {x:2120,y:250,w:60,h:250,rock:true},{x:2180,y:200,w:120,h:300,rock:true},
@@ -117,7 +117,7 @@ const spikes=[];
 const MUDS=[
   {x:1060,w:180,rate:12,stakes:[1130],nobody:true},
   {x:1320,w:232,rate:13,stakes:[]},
-  {x:1680,w:360,rate:30,stakes:[],holes:[1742,1844,1898,1988],decoys:[1778,1806,1868,1934,1957,2021]},
+  {x:1712,w:328,rate:30,stakes:[],one:true,holes:[1752,1812,1986],decoys:[1780,1846,1878,1912,1946,2016]},
   {x:2640,w:560,rate:25,stakes:[2690,2750,2810,2870],deep:true},
   {x:3660,w:300,rate:12,stakes:[3770,3850,3930]},
 ];
@@ -994,7 +994,8 @@ function twoHands(){return !!((p.climb&&p.climb2)||p.hang||p.wheel||p.ropePull||
 function placeLanternAtCp(){const c=checkpoints[cpi];lantern.x=c.x+(c.lo==null?40:c.lo);lantern.y=c.y-12;lantern.vy=0;lantern.held=false;lantern.inHand=false;lantern.on=null;lantern.slide=false;}
 function lanternHand(){const back=p.pull||(p.anchor!==null&&p.onGround);return{x:p.x+7+(back?-p.face*8:p.face*9)-4,y:p.y+14};}
 function die(cause){
-  {const bs=objs.filter(o=>o.type==='body'&&!o.ghost&&!o.keep);for(const o of bs.slice(0,-1)){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}}   // 몸은 둘까지 남는다. 셋째가 쓰러지면 가장 오래된 몸이 흰 새가 되어 날아간다   // 앞선 몸은 흰 새가 되어 날아간다
+  {const mm=mudAt(p.x+7);if(mm&&mm.one)for(const o of objs)if(o.type==='body'&&!o.ghost&&!o.keep&&o.x+14>mm.x&&o.x+14<mm.x+mm.w){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}}   // 짱뚱어 펄에는 몸이 하나만 남는다
+  {const bs=objs.filter(o=>o.type==='body'&&!o.ghost&&!o.keep&&o.y<700);for(const o of bs.slice(0,-1)){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}}   // 몸은 둘까지 남는다. 셋째가 쓰러지면 가장 오래된 몸이 흰 새가 되어 날아간다   // 앞선 몸은 흰 새가 되어 날아간다
   p.dead=true;deadT=0;p.held=null;p.pull=null;p.anchor=null;p.caught=false;p.hang=false;p.ropePull=false;p.wheel=false;p.brace=false;p.busy=false;p.riding=false;p.hide=false;p.hoist=false;p.swapW=0;p.moor=false;p.ferryPull=false;deaths++;
   if(cause==='mud'||cause==='drown'||cause==='oyster'||cause==='cargo'){
     const b={type:'body',x:p.x+p.w/2-14,y:cause==="mud"?MUD_BED-24:p.y+p.h-14,w:28,h:14,vy:0,face:p.face,wt:WT[AGE]};
@@ -1811,7 +1812,7 @@ function init3D(){
     wispM.visible=wisp.a>.02;if(wispM.visible){wispM.position.set(wisp.x,-(wisp.y-16),6);wispM.rotation.y=time*2;wispM.scale.setScalar(.7+.3*wisp.a);}wispL.position.set(wisp.x,-(wisp.y-16),20);wispL.intensity=2600*wisp.a;
     fish.amb.forEach((f,i)=>{const m=fishM[i];m.visible=f.st==='sit';m.position.x=f.x;m.position.y=-300+(f.hop>0?3:0);});
     for(const d of mudHoles){d.material.opacity=clamp(1-(Math.abs(lantern.x+4-d.userData.hx)-70)/50,0,1);d.visible=d.material.opacity>.02;}   // 등불빛이 닿아야 구멍이 보인다
-    {const holes=MUDS[2].holes,m=fishM[4];m.visible=fish.chain<holes.length&&fish.st==='sit'&&Math.abs(lantern.x+4-holes[fish.chain])<125;if(m.visible){m.position.x=holes[fish.chain]-1;m.position.y=-300.6;}}
+    {const holes=MUDS[2].holes,m=fishM[4],c=fish;m.visible=c.chain<holes.length;if(m.visible){let x=holes[c.chain],y=0;if(c.st==='hide'){const k=Math.min(1,c.t/.7),nx=c.chain+1<holes.length?holes[c.chain+1]:x+46;x+=(nx-x)*k;y=Math.sin(k*Math.PI)*24;}else y=Math.max(0,Math.sin(time*2.2))*3;m.position.x=x-1;m.position.y=-300.6+y;m.scale.setScalar(2);if(!m.userData.lit){m.userData.lit=1;m.children[0].material=new T.MeshStandardMaterial({color:0xc4d0bd,emissive:0x3a4a40,roughness:.5,flatShading:true});}}}   // 짱뚱어는 늘 보이고, 다가가면 다음 단단한 땅으로 펄쩍 뛰어 옮겨 간다
     FARKIDS.forEach((k,i)=>{const x=farKidX(k)/.456;farKids[i].position.set(x,-295,-800);farKids[i].rotation.z=Math.sin(time*5+i)*.06;});
     for(const g of skyBoats){const b=g.userData.b;g.position.x=b[0]+Math.sin(time*.05+b[2])*260;g.position.y=b[1]+Math.sin(time*.3+b[2]*2)*14;g.rotation.z=Math.sin(time*.4+b[2])*.05;}
     for(const g of airFish){const f=g.userData.f,ph=time*.5+f[2];g.position.set(f[0]+Math.cos(ph)*46,-(f[1]+Math.sin(ph*1.3)*14),-52+Math.sin(ph)*30);g.rotation.y=Math.atan2(Math.cos(ph)*30,-Math.sin(ph)*46);f[3].rotation.y=Math.sin(time*9+f[2])*.6;}
