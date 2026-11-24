@@ -81,11 +81,11 @@ const statics=[
   {x:2700,y:215,w:70,h:26,rock:true,cap:true},{x:2830,y:190,w:90,h:26,rock:true,cap:true},   // 버섯바위의 갓 (기둥은 뒤에 서 있다)
   {x:2980,y:210,w:100,h:26,rock:true,cap:true},{x:3135,y:255,w:65,h:26,rock:true,cap:true},
   // 6. 밀물: 깊은 물골
-  {x:3200,y:300,w:130,h:200},{x:3330,y:350,w:150,h:200},{x:3480,y:300,w:120,h:200},
+  {x:3200,y:300,w:190,h:200},{x:3390,y:350,w:150,h:200},{x:3540,y:300,w:120,h:200},
   // 7. 마지막 시험: 밀물 드는 말뚝 펄. 높은 갯바위에는 물에 뜬 몸을 타고서만 오른다
-  {x:3600,y:258,w:60,h:242,rock:true},                    // 펄 앞 바위턱 (물이 다 차도 잠기지 않는다)
-  {x:3660,y:324,w:300,h:200},                             // 펄 바닥
-  {x:3960,y:224,w:200,h:276,rock:true},                   // 갓바위로 오르는 높은 바위 (펄에서 76)
+  {x:3660,y:258,w:60,h:242,rock:true},                    // 펄 앞 바위턱 (물이 다 차도 잠기지 않는다)
+  {x:3720,y:324,w:300,h:200},                             // 펄 바닥
+  {x:4020,y:224,w:200,h:276,rock:true},                   // 갓바위로 오르는 높은 바위 (펄에서 76)
   // ===== 2장: 포구 =====
   {x:4700,y:300,w:400,h:200,rock:true},                    // 선창
   {x:5100,y:210,w:300,h:290,rock:true},                    // 덕장 둑 (높이 90)
@@ -119,16 +119,16 @@ const MUDS=[
   {x:1320,w:232,rate:13,stakes:[]},
   {x:1712,w:328,rate:30,stakes:[],one:true,holes:[1752,1812,1986],decoys:[1780,1846,1878,1912,1946,2016]},
   {x:2640,w:560,rate:25,stakes:[2690,2750,2810,2870],deep:true},
-  {x:3660,w:300,rate:12,stakes:[3770,3850,3930]},
+  {x:3720,w:300,rate:12,stakes:[3830,3910,3990]},
 ];
 const MUD_TOP=300,MUD_BED=324;
 const OYSTERS=[[2300,2470]];
-const CHANNEL={x:3330,x2:3480,floor:350,full:302};
-const SEA_X=4160;                              // 갓바위 너머 밤바다
+const CHANNEL={x:3390,x2:3540,floor:350,full:302};
+const SEA_X=4220;                              // 갓바위 너머 밤바다
 const FATHER={x:190};                          // 그물을 덮어쓴 몸
 const BUOY={x:1905};                           // 아버지 배의 표식이 새겨진 부표
-const GATBAWI=[{x:4230,h:74,w:26,tilt:0},{x:4290,h:52,w:20,tilt:.35}]; // 아버지 바위, 아들 바위
-const checkpoints=[{x:30,y:300},{x:940,y:300},{x:1250,y:300},{x:1556,y:300},{x:2050,y:300},{x:2500,y:300},{x:3210,y:300},{x:3492,y:300},{x:3612,y:258},
+const GATBAWI=[{x:4350,h:74,w:26,tilt:0},{x:4350,h:52,w:20,tilt:.35}]; // 아버지 바위, 아들 바위
+const checkpoints=[{x:30,y:300},{x:940,y:300},{x:1250,y:300},{x:1556,y:300},{x:2050,y:300},{x:2500,y:300},{x:3210,y:300},{x:3552,y:300},{x:3672,y:258},
   {x:4730,y:300},{x:5120,y:210},{x:5560,y:140},{x:5940,y:140},{x:6703,y:250},{x:6840,y:150},
   {x:7720,y:210},{x:8150,y:250},{x:8540,y:250},{x:8960,y:250}, {x:9620,y:250},{x:9984,y:250},{x:10506,y:250},{x:11110,y:262}, {x:11930,y:250},{x:12310,y:178},{x:12408,y:60}];
 const DOORS=[{ax:12244,ay:250,bx:12332,by:178}];   // 꿈의 문: 들어가면 다른 문으로 나온다. 상자와 몸도 지나간다
@@ -356,9 +356,9 @@ function roomsStep(dt,G,dir){
   p.busy=!!(p.hoist||p.swapW||p.moor);
 }
 
-const BASIN2={x:3660,x2:3960,low:330,full:262};      // 마지막 시험의 밀물: 아이가 올 때마다 다시 든다
-const WAITS=[1272,1600,2080,2520,2735,3235,3512,3630,4120, 4800,5150,5590,5960,6806,6860,7280,7600, 7760,8160,8300,8560,8980,9300, 9700,9990,10300,10540,11095,11400,11880, 12000,12320,12440,12600,12660];  // 넋이 멈춰 서서 기다리는 곳
-const ENDX=4100;
+const BASIN2={x:3720,x2:4020,low:330,full:262};      // 마지막 시험의 밀물: 아이가 올 때마다 다시 든다
+const WAITS=[1272,1600,2080,2520,2735,3235,3572,3690,4180, 4800,5150,5590,5960,6806,6860,7280,7600, 7760,8160,8300,8560,8980,9300, 9700,9990,10300,10540,11095,11400,11880, 12000,12320,12440,12600,12660];  // 넋이 멈춰 서서 기다리는 곳
+const ENDX=4160;
 const STAKE_LIST=[];for(const m of MUDS)for(const s of m.stakes)STAKE_LIST.push(s);
 
 const grass=[];(()=>{const r=rng(7);for(const s of statics){if(s.y!==300||s.hidden)continue;for(let x=s.x+2;x<s.x+s.w-2;x+=4+r()*9)grass.push([x,s.y,1+r()*3,(r()-.5)*3]);}})();
@@ -392,7 +392,7 @@ const DAVX=NETR.x+52,HOOKX=NETR.x+10,THROWX=BOATD.x+56;
 const KPOST=5900,KEDGE=6000;                         // 고풀이 기둥과 방파제 끝
 const RAFT_DOCK=6004,RAFT_MAX=6610,RAFT_OUT=6240;
 const CRB={x:6722,w:52},CRA={x:6792,w:28},CR_LOW=250,CR_HIGH=150;   // 도르래로 이어진 두 그물
-const ENDS=[{x:4100,next:9},{x:7250,next:15},{x:9330,next:19,age:2},{x:1e9,next:null}];     // 장의 끝과 다음 장의 첫 체크포인트
+const ENDS=[{x:4160,next:9},{x:7250,next:15},{x:9330,next:19,age:2},{x:1e9,next:null}];     // 장의 끝과 다음 장의 첫 체크포인트
 const DRAGA=[90,120,160],JVA=[410,430,410],MUDK=[1,1.6,2.6],WT=[1,2,3],AGESC=[1,1.2,1.4];  // 아이, 소년, 어른
 let AGE=0,pendingAge=0,net,knot,raft,crA,crB,cargoT=0;
 function cpOrd(){return checkpoints[cpi].ord;}
@@ -997,6 +997,7 @@ function placeLanternAtCp(){const c=checkpoints[cpi];lantern.x=c.x+(c.lo==null?4
 function lanternHand(){const back=p.pull||(p.anchor!==null&&p.onGround);return{x:p.x+7+(back?-p.face*8:p.face*9)-4,y:p.y+14};}
 function die(cause){
   {const mm=mudAt(p.x+7);if(mm&&mm.one)for(const o of objs)if(o.type==='body'&&!o.ghost&&!o.keep&&o.x+14>mm.x&&o.x+14<mm.x+mm.w){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}}   // 짱뚱어 펄에는 몸이 하나만 남는다
+  if(p.x+7>CHANNEL.x-6&&p.x+7<CHANNEL.x2+6)for(const o of objs)if(o.type==='body'&&!o.ghost&&!o.keep&&o.y<700&&o.x+14>CHANNEL.x-10&&o.x+14<CHANNEL.x2+10){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}   // 밀물 물골에도 몸이 하나만 남는다
   {const bs=objs.filter(o=>o.type==='body'&&!o.ghost&&!o.keep&&o.y<700);for(const o of bs.slice(0,-1)){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}}   // 몸은 둘까지 남는다. 셋째가 쓰러지면 가장 오래된 몸이 흰 새가 되어 날아간다   // 앞선 몸은 흰 새가 되어 날아간다
   p.dead=true;deadT=0;p.held=null;p.pull=null;p.anchor=null;p.caught=false;p.hang=false;p.ropePull=false;p.wheel=false;p.brace=false;p.busy=false;p.riding=false;p.hide=false;p.hoist=false;p.swapW=0;p.moor=false;p.ferryPull=false;deaths++;
   if(cause==='mud'||cause==='drown'||cause==='oyster'||cause==='cargo'){
@@ -1634,7 +1635,7 @@ function init3D(){
   // 갯바위 밑동의 젖은 띠(물때 자국)
   for(const st of statics){if(!st.rock||st.prop||st.cap||st.h>=700||st.w<30)continue;const y0=Math.max(st.y+6,280),y1=Math.min(st.y+st.h,340);if(y1-y0>6)gbox(st.x-.4,y0,st.w+.8,y1-y0,60.3,1.2,M.weed);}
   // 칠게: 옆으로 기어 다니다가 아이가 다가오면 구멍으로 숨는다
-  const crabs=[];for(const x of [330,470,610,900,1250,1500,1600,2080,2420,2520,3240,3300,3520,3560]){const g=new T.Group();box(5,2.2,3.6,M.crab,0,1.6,0,g);box(2,1.6,1.6,M.crab,3,2.6,1.6,g);box(1.4,1.2,1.2,M.crab,-3,2.2,1.4,g);for(const dz of [-.9,.9])add(new T.SphereGeometry(.5,4,3),M.hole,1.4,3.4,dz+1,g);g.userData.c=[x+(r()-.5)*30,30+r()*20,r()*6,0];sc.add(g);crabs.push(g);}
+  const crabs=[];for(const x of [330,470,610,900,1250,1500,1600,2080,2420,2520,3240,3300,3580,3620]){const g=new T.Group();box(5,2.2,3.6,M.crab,0,1.6,0,g);box(2,1.6,1.6,M.crab,3,2.6,1.6,g);box(1.4,1.2,1.2,M.crab,-3,2.2,1.4,g);for(const dz of [-.9,.9])add(new T.SphereGeometry(.5,4,3),M.hole,1.4,3.4,dz+1,g);g.userData.c=[x+(r()-.5)*30,30+r()*20,r()*6,0];sc.add(g);crabs.push(g);}
   // 펄
   const mudHoles=[];
   const mudTop=new T.MeshStandardMaterial({vertexColors:true,flatShading:true,roughness:.2,metalness:.28});
