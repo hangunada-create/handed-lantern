@@ -918,7 +918,7 @@ function spiritTick(dt){
   {const sw=waterAt(s.x);if(sw!==null)top=Math.min(top,sw-1);}
   if(!play||d>110||Math.abs(top-s.y)>5)s.fly=true;else if(d<=1)s.fly=false;
   const wary=s.x>=LOWD.x-10&&s.x<LOWD.x2&&tideLv()<314;if(wary)s.fly=true;   // 넋은 물이 들 자리에는 앉지 않는다
-  s.moving=d>1;if(d>0)s.x+=Math.min(d,(play?(s.fly?320:60):70)*dt);s.t+=dt;
+  s.moving=d>1;{const v=d>0?(play?(s.fly?Math.min(320,70+d*2.6):60):70):0;s.sp=(s.sp||0)+(v-(s.sp||0))*Math.min(1,dt*(play?5:60));if(d>0)s.x+=Math.min(d,Math.max(play?40:70,s.sp)*dt);}s.t+=dt;
   s.y+=(top-s.y)*Math.min(1,dt*6);s.alt+=((s.fly?(wary?58:22):0)-s.alt)*Math.min(1,dt*5);
   if(!play&&d<140)s.a=Math.max(0,s.a-dt*.5);
 }
@@ -1730,7 +1730,7 @@ function init3D(){
   function mkBody(){const g=new T.Group();add(jit(new T.BoxGeometry(20,8,10),.8),M.navy,2,4,0,g);add(new T.IcosahedronGeometry(4,1),M.skin,-10.6,4.4,0,g);const t=new T.Group();add(new T.CylinderGeometry(4.3,4.3,3,7),M.white,-12.6,4.6,0,t).rotation.z=Math.PI/2;box(2,1.2,5,M.white,-16,1,2,t);g.add(t);g.userData.t=t;sc.add(g);return g;}
   const bird=new T.Group(),bw=[];{add(jit(new T.IcosahedronGeometry(6.4,0),1),M.bird,0,17,0,bird).scale.set(1.5,.8,.85);const n=add(new T.CylinderGeometry(.9,1.3,14,5),M.bird,8.6,25,0,bird);n.rotation.z=-.4;add(new T.IcosahedronGeometry(2.5,0),M.bird,11.4,32,0,bird);const bk=add(new T.ConeGeometry(.9,8,4),M.orange,16.4,31.6,0,bird);bk.rotation.z=-Math.PI/2;
     add(new T.ConeGeometry(3,10,4),M.bird,-11,16.4,0,bird).rotation.z=Math.PI/2+.25;add(new T.ConeGeometry(.5,6,4),M.bird,11.6,35.4,0,bird).rotation.z=.9;
-    for(const dz of [-1.4,1.4]){box(.7,7,.7,M.dark,.8,9.6,dz,bird).rotation.z=-.25;box(.7,7,.7,M.dark,.6,3.4,dz,bird).rotation.z=.2;box(3,.6,.7,M.dark,1.6,.3,dz,bird);}for(const d of [-1,1]){const w=new T.Group();w.position.set(-1,19,d*4);box(9,1,12,M.bird,0,0,d*6,w);bird.add(w);bw.push([w,d]);}sc.add(bird);}
+    const legG=new T.Group();legG.position.set(.8,13,0);bird.add(legG);bird.userData.legs=legG;for(const dz of [-1.4,1.4]){box(.7,7,.7,M.dark,0,-3.4,dz,legG).rotation.z=-.25;box(.7,7,.7,M.dark,-.2,-9.6,dz,legG).rotation.z=.2;box(3,.6,.7,M.dark,.8,-12.7,dz,legG);}for(const d of [-1,1]){const w=new T.Group();w.position.set(-1,19,d*4);box(11,1,10,M.bird,0,0,d*5,w);const w2=new T.Group();w2.position.set(-.5,0,d*10);box(8,.8,11,M.bird,-1,0,d*5.5,w2);w.add(w2);bird.add(w);bw.push([w,d,w2]);}sc.add(bird);}
   const wispM=add(new T.IcosahedronGeometry(7,0),M.teal,0,0,6,null,true);
   const fishM=[0,1,2,3,4].map(()=>{const g=new T.Group();add(new T.BoxGeometry(12,4,4),M.shell,0,2,0,g);add(new T.SphereGeometry(1.3,5,4),M.white,4.4,4.2,1.6,g);g.position.z=14;sc.add(g);return g;});
   // 2장: 포구
@@ -1807,12 +1807,12 @@ function init3D(){
     soulM.forEach((g,i)=>{const q=souls[i];g.visible=!!q;if(q){g.position.set(q.x,-q.y,4);const f=Math.sin(time*16+i)*.7;g.userData.w[0].rotation.x=f;g.userData.w[1].rotation.x=-f;g.scale.setScalar(Math.min(1,q.t*4)*(1-Math.max(0,q.t-1.6)/.6));}});
     for(;bi<bodies.length;bi++)bodies[bi].visible=false;for(;ci<crates.length;ci++)crates[ci].visible=false;
     // 넋, 도깨비불, 짱뚱어
-    const s=spirit;bird.visible=s.st!=='hidden'&&s.a>.03;if(bird.visible){const fly=s.alt>4;bird.position.set(s.x,-(s.y-s.alt)-(fly?0:0),-10);bird.rotation.y=s.back?Math.PI:0;M.bird.opacity=s.a;for(const [w,d] of bw)w.rotation.x=fly?d*Math.sin(time*10)*.9:d*1.35;bird.rotation.z=fly?-.25:0;
+    const s=spirit;bird.visible=s.st!=='hidden'&&s.a>.03;if(bird.visible){const fly=s.alt>4;const k=Math.min(1,s.alt/18),sp=Math.min(1,(s.sp||0)/300),ph=time*(11+3*sp),amp=(.62+.25*Math.sin(time*1.7))*(1-.35*sp);const bob=fly?(-Math.cos(ph)*2.2+Math.sin(time*1.3)*3*k):0;bird.position.set(s.x,-(s.y-s.alt)+bob,-10);bird.rotation.y=s.back?Math.PI:0;M.bird.opacity=s.a;for(const [w,d,w2] of bw){w.rotation.x=fly?d*(Math.sin(ph)*amp+.18):d*1.35;w2.rotation.x=fly?d*(Math.sin(ph-1)*.55-.1):d*.25;}const rising=s.fly?1-k:0;bird.rotation.z=fly?(-.3*sp+.4*rising+Math.cos(ph)*.04):0;bird.userData.legs.rotation.z=-1.3*k*(s.fly?1:.5);
       spL.position.set(s.x,-(s.y-s.alt)+18,14);spL.intensity=900*s.a;}else spL.intensity=0;
     wispM.visible=wisp.a>.02;if(wispM.visible){wispM.position.set(wisp.x,-(wisp.y-16),6);wispM.rotation.y=time*2;wispM.scale.setScalar(.7+.3*wisp.a);}wispL.position.set(wisp.x,-(wisp.y-16),20);wispL.intensity=2600*wisp.a;
     fish.amb.forEach((f,i)=>{const m=fishM[i];m.visible=f.st==='sit';m.position.x=f.x;m.position.y=-300+(f.hop>0?3:0);});
     for(const d of mudHoles){d.material.opacity=clamp(1-(Math.abs(lantern.x+4-d.userData.hx)-70)/50,0,1);d.visible=d.material.opacity>.02;}   // 등불빛이 닿아야 구멍이 보인다
-    {const holes=MUDS[2].holes,m=fishM[4],c=fish;m.visible=c.chain<holes.length;if(m.visible){let x=holes[c.chain],y=0;if(c.st==='hide'){const k=Math.min(1,c.t/.7),nx=c.chain+1<holes.length?holes[c.chain+1]:x+46;x+=(nx-x)*k;y=Math.sin(k*Math.PI)*24;}else y=Math.max(0,Math.sin(time*2.2))*3;m.position.x=x-1;m.position.y=-300.6+y;m.scale.setScalar(2);if(!m.userData.lit){m.userData.lit=1;m.children[0].material=new T.MeshStandardMaterial({color:0xc4d0bd,emissive:0x3a4a40,roughness:.5,flatShading:true});}}}   // 짱뚱어는 늘 보이고, 다가가면 다음 단단한 땅으로 펄쩍 뛰어 옮겨 간다
+    {const holes=MUDS[2].holes,m=fishM[4],c=fish;m.visible=c.chain<holes.length;if(m.visible){let x=holes[c.chain],y=0;if(c.st==='hide'){const k=Math.min(1,c.t/.7),nx=c.chain+1<holes.length?holes[c.chain+1]:x+46;x+=(nx-x)*k;y=Math.sin(k*Math.PI)*24;}else y=Math.max(0,Math.sin(time*2.2))*3;m.position.x=x-1;m.position.y=-300.6+y;m.scale.setScalar(1.25);if(!m.userData.lit){m.userData.lit=1;m.children[0].material=new T.MeshStandardMaterial({color:0xc4d0bd,emissive:0x3a4a40,roughness:.5,flatShading:true});}}}   // 짱뚱어는 늘 보이고, 다가가면 다음 단단한 땅으로 펄쩍 뛰어 옮겨 간다
     FARKIDS.forEach((k,i)=>{const x=farKidX(k)/.456;farKids[i].position.set(x,-295,-800);farKids[i].rotation.z=Math.sin(time*5+i)*.06;});
     for(const g of skyBoats){const b=g.userData.b;g.position.x=b[0]+Math.sin(time*.05+b[2])*260;g.position.y=b[1]+Math.sin(time*.3+b[2]*2)*14;g.rotation.z=Math.sin(time*.4+b[2])*.05;}
     for(const g of airFish){const f=g.userData.f,ph=time*.5+f[2];g.position.set(f[0]+Math.cos(ph)*46,-(f[1]+Math.sin(ph*1.3)*14),-52+Math.sin(ph)*30);g.rotation.y=Math.atan2(Math.cos(ph)*30,-Math.sin(ph)*46);f[3].rotation.y=Math.sin(time*9+f[2])*.6;}
