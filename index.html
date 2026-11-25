@@ -221,8 +221,8 @@ function rwaveAt(x,f){if(f>225)for(const z of RWAVE)if(x>z.x&&x<z.x2)return z;re
  r.init=()=>{RM.storm.gt=0;objs=objs.filter(o=>!(o.type==='crate'&&inRoom(o,r)));for(const x of [576,336])objs.push({type:'crate',x:O11+x,y:259,w:44,h:16,vy:0,wt:1});};r.reset=()=>{};}
 // 12 떼배 무게 맞추기 (2장, 소년이 된 뒤 큰 배 위): 어구 상자를 실어 깊이 잠겨야 뱃머리 밑을 지나고, 상자를 버려 떠올라야 모래톱을 넘는다
 {const r=mkRoom('ferry',O12,14,{blockX:7170,blockY:-10,ax:7120,bx:7226,y:150,f:[.7,.9]},{inY:250,outX:O12+740,outY:250});
- statics.push({x:O12-60,y:250,w:220,h:300,rock:true},{x:O12+640,y:250,w:180,h:300,rock:true},{x:O12+470,y:272,w:70,h:280,rock:true},{x:O12+300,y:-300,w:40,h:538,hidden:true});
- RDECO.push({x:O12+260,y:-80,w:120,h:290,z:0,d:150,mat:'hull'},{x:O12+300,y:210,w:40,h:28,z:0,d:120,mat:'hull'},{x:O12+146,y:232,w:4,h:18,z:-6,d:4,mat:'wood'},{x:O12+650,y:232,w:4,h:18,z:-6,d:4,mat:'wood'});
+ statics.push({x:O12-60,y:250,w:220,h:300,rock:true},{x:O12+640,y:250,w:180,h:300,rock:true},{x:O12+470,y:272,w:70,h:280,rock:true},{x:O12+300,y:-300,w:40,h:536,hidden:true});
+ RDECO.push({x:O12+260,y:-80,w:120,h:290,z:0,d:150,mat:'hull'},{x:O12+300,y:210,w:40,h:20,z:0,d:120,mat:'hull'},{x:O12+146,y:232,w:4,h:18,z:-6,d:4,mat:'wood'},{x:O12+650,y:232,w:4,h:18,z:-6,d:4,mat:'wood'});
  RWZ.push({x:O12+160,x2:O12+640,lv:()=>268});
  RM.ferry={r:{x:O12+162,y:252,w:110,h:10,mat:'wood'}};RDYN.push(RM.ferry.r);
  RROPE.push({pts:()=>[O12+148,236,O12+400,246]},{pts:()=>[O12+400,246,O12+652,236]},{pts:()=>p.ferryPull&&!p.dead?[p.x+7,p.y+9,p.x+1,p.y+16]:[O12,9000,O12,9000]});
@@ -295,7 +295,7 @@ function roomsTick(dt){
   {const q=RM.storm;if(alive&&p.x>O11-80&&p.x<O11+840){const f=p.y+p.h,lit=ghostLit()&&q.L.some(l=>Math.abs(p.x+7-l.x)<l.r&&(l.up?f<200:f>200));
     if(lit){q.gt+=dt;if(q.gt>.7){q.gt=0;die('ghost');}}else q.gt=Math.max(0,q.gt-dt*2);}}
   // 떼배: 실린 무게만큼 잠긴다. 깊이 잠겨야 뱃머리 밑을 지나고, 떠올라야 모래톱을 넘는다
-  {const q=RM.ferry,R=q.r,BOW={x:O12+300,y:-300,w:40,h:538},ride=alive&&p.onGround&&onTop(p,R),near=alive&&p.x+14>R.x&&p.x<R.x+R.w&&p.y+p.h<=R.y+3&&p.y+p.h>R.y-80;
+  {const q=RM.ferry,R=q.r,BOW={x:O12+300,y:-300,w:40,h:536},ride=alive&&p.onGround&&onTop(p,R),near=alive&&p.x+14>R.x&&p.x<R.x+R.w&&p.y+p.h<=R.y+3&&p.y+p.h>R.y-80;
    let W=0;const on=[];for(const o of objs){if(o.ghost)continue;const cx=o.x+o.w/2;if(onTop(o,R)&&cx>R.x&&cx<R.x+R.w){on.push(o);W+=o.wt||1;}}
    if(ride)W+=WT[AGE];
    let ty=252+4*W;if(R.x+R.w>O12+470&&R.x<O12+540)ty=Math.min(ty,262);
@@ -1017,6 +1017,7 @@ function die(cause){
   if(p.x+7>CHANNEL.x-6&&p.x+7<CHANNEL.x2+6)for(const o of objs)if(o.type==='body'&&!o.ghost&&!o.keep&&o.y<700&&o.x+14>CHANNEL.x-10&&o.x+14<CHANNEL.x2+10){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}   // 밀물 물골에도 몸이 하나만 남는다
   {const bs=objs.filter(o=>o.type==='body'&&!o.ghost&&!o.keep&&o.y<700);for(const o of bs.slice(0,-1)){souls.push({x:o.x+14,y:o.y,t:0});o.y=9000;sfx('wing');}}   // 몸은 둘까지 남는다. 셋째가 쓰러지면 가장 오래된 몸이 흰 새가 되어 날아간다   // 앞선 몸은 흰 새가 되어 날아간다
   p.dead=true;deadT=0;p.held=null;p.pull=null;p.anchor=null;p.caught=false;p.hang=false;p.ropePull=false;p.wheel=false;p.brace=false;p.busy=false;p.riding=false;p.hide=false;p.hoist=false;p.swapW=0;p.moor=false;p.ferryPull=false;deaths++;
+  {const rm=p.x>ANNEX?roomAt(p.x+7):null;if(rm&&!['plug','plank','rise'].includes(rm.id)&&(cause==='drown'||cause==='mud'))cause='sunk';}   // 죽음이 필요 없는 꿈의 방에서는 몸이 남지 않고 가라앉는다(2026-11-25)
   if(cause==='mud'||cause==='drown'||cause==='oyster'||cause==='cargo'){
     const b={type:'body',x:p.x+p.w/2-14,y:cause==="mud"?MUD_BED-24:p.y+p.h-14,w:28,h:14,vy:0,face:p.face,wt:WT[AGE]};
     if(cause==='oyster'){b.bloody=true;b.bt=0;b.seed=(Math.random()*1e9)|0;
@@ -1032,7 +1033,7 @@ function die(cause){
   if(cause==='deep'){for(let i=0;i<8;i++)bubbles.push({x:p.x+7+(Math.random()-.5)*14,y:MUD_TOP+2+Math.random()*6,l:.6+Math.random(),mud:true});}
   if(lantern.held){
     lantern.held=false;
-    if(cause==='fall'||cause==='deep'||cause==='rope'||cause==='ghost')placeLanternAtCp();
+    if(cause==='fall'||cause==='deep'||cause==='rope'||cause==='ghost'||cause==='sunk')placeLanternAtCp();
     else{lantern.x=p.x+p.w/2-4;lantern.y=p.y-6;lantern.vy=-120;}
   }
   sfx(cause);if(cause==='oyster')shake=Math.max(shake,.2);
