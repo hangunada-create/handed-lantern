@@ -340,7 +340,7 @@ function roomsStep(dt,G,dir){
     const ride=objs.some(o=>!o.ghost&&onTop(p,o)&&waterAt(o.x+o.w/2)!==null);
     if(wavePh()===2&&!p.brace&&!ride){p.held=null;movePX(-320*dt,false);}}}
   // 떼배의 부표 줄 당기기 (곁에 짐이 있으면 짐을 붙잡는다)
-  {const R=RM.ferry.r;p.ferryPull=G&&inp('left')&&!inp('right')&&p.onGround&&onTop(p,R)&&!adjacentObj(1,8)&&!adjacentObj(-1,8);if(p.ferryPull){p.ropePull=true;p.face=-1;p.walkT+=dt*.6;}}
+  {const R=RM.ferry.r;p.ferryPull=G&&inp('right')&&!inp('left')&&p.onGround&&onTop(p,R)&&!adjacentObj(1,8)&&!adjacentObj(-1,8);if(p.ferryPull){p.ropePull=true;p.face=1;p.walkT+=dt*.6;}}
   // 널을 매어 둔 줄: 붙잡으면 풀리고, 떠내려간 뒤에 붙잡으면 되끌려 온다
   p.moor=G&&still&&p.onGround&&!p.held&&Math.abs(c-(O13+176))<12&&Math.abs(f-250)<2;if(p.moor)p.face=1;
   // 줄 걸기: 줄 끝을 쥐고 걷는다. 말뚝을 지나가면 걸리고, 줄이 다 풀리면 더 못 간다
@@ -453,7 +453,7 @@ function ch2Step(dt,L,R,G,dir){
         if(!led&&p.ledge>0&&p.ledS)led=p.ledS;
         if(led&&p.y+p.h<=led.y){p.y=led.y-p.h;p.ledge=.15;p.ledS=led;movePX((led.x+led.w/2>p.x+7?1:-1)*90*dt,false);}}}   // 그물 꼭대기까지 떠오르지 않고, 옆의 턱 높이에 닿으면 그 위로 올라선다
     p.moving=!!dir||inp('jump');p.sink=0;return true;}
-  if(raft.free&&G&&L&&!R&&p.onGround&&onTop(p,raft)&&raft.x<RAFT_MAX){p.ropePull=true;p.face=-1;p.walkT+=dt*.6;}
+  if(raft.free&&G&&R&&!L&&p.onGround&&onTop(p,raft)&&raft.x<RAFT_MAX){p.ropePull=true;p.face=1;p.walkT+=dt*.6;}
   return false;
 }
 /* 2장의 것들 그리기 */
